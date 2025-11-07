@@ -1,0 +1,149 @@
+name: CI - Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-ml-service:
+    name: Test ML Service
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      working-directory: ./services/ml-service
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov httpx
+    
+    - name: Run tests
+      working-directory: ./services/ml-service
+      run: |
+        pytest test_app.py -v --cov=app --cov-report=xml
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./services/ml-service/coverage.xml
+        flags: ml-service
+        name: ml-service-coverage
+
+  test-backend-api:
+    name: Test Backend API
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      working-directory: ./services/backend-api
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
+    
+    - name: Run tests
+      working-directory: ./services/backend-api
+      run: |
+        pytest test_app.py -v --cov=app --cov-report=xml
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./services/backend-api/coverage.xml
+        flags: backend-api
+        name: backend-api-coverage
+
+  lint-python:
+    name: Lint Python Code
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install linting tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black
+    
+    - name: Lint ML Service
+      working-directory: ./services/ml-service
+      run: |
+        flake8 app.py --max-line-length=100 --ignore=E501,W503
+        black --check app.py || true
+    
+    - name: Lint Backend API
+      working-directory: ./services/backend-api
+      run: |
+        flake8 app.py --max-line-length=100 --ignore=E501,W503
+        black --check app.py || true
+
+  build-docker-images:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [test-ml-service, test-backend-api]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build ML Service Image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services/ml-service
+        push: false
+        tags: ml-service:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Build Backend API Image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services/backend-api
+        push: false
+        tags: backend-api:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Build Frontend Image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services/frontend
+        push: false
+        tags: frontend:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  validate-k8s:
+    name: Validate Kubernetes Manifests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Validate Kubernetes manifests
+      uses: instrumenta/kubeval-action@master
+      with:
+        files: k8s/
