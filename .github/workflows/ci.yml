@@ -6,10 +6,15 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+permissions:
+  contents: read
+
 jobs:
   test-ml-service:
     name: Test ML Service
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
     - uses: actions/checkout@v4
@@ -41,6 +46,8 @@ jobs:
   test-backend-api:
     name: Test Backend API
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
     - uses: actions/checkout@v4
@@ -72,6 +79,8 @@ jobs:
   lint-python:
     name: Lint Python Code
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
     - uses: actions/checkout@v4
@@ -102,6 +111,8 @@ jobs:
     name: Build Docker Images
     runs-on: ubuntu-latest
     needs: [test-ml-service, test-backend-api]
+    permissions:
+      contents: read
     
     steps:
     - uses: actions/checkout@v4
@@ -139,6 +150,8 @@ jobs:
   validate-k8s:
     name: Validate Kubernetes Manifests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
     - uses: actions/checkout@v4
