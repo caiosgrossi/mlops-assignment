@@ -193,7 +193,7 @@ class EclatAlgorithm:
 class ModelManager:
     """Gerencia salvamento e metadata dos modelos"""
     
-    def __init__(self, models_dir='/home/caiog/project2-pv/models'):
+    def __init__(self, models_dir='/app/models'):
         self.models_dir = models_dir
         self.metadata_file = os.path.join(models_dir, 'metadata.json')
         self._ensure_directories()
