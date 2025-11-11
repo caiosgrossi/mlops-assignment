@@ -354,7 +354,7 @@ def health():
         'status': 'healthy',
         'service': 'music-recommendation-eclat',
         'timestamp': datetime.now().isoformat(),
-        'port': 5005
+        'port': 50005
     }), 200
 
 
@@ -483,7 +483,7 @@ if __name__ == '__main__':
     print("="*70)
     print("  MUSIC RECOMMENDATION SERVICE - ECLAT ALGORITHM")
     print("="*70)
-    print(f"  Port: 5005")
+    print(f"  Port: 50005")
     print(f"  Min Support: 0.05 (hard-coded)")
     print(f"  Min Confidence: 0.3 (hard-coded)")
     print(f"  Models Directory: {model_manager.models_dir}")
@@ -493,5 +493,5 @@ if __name__ == '__main__':
     print("  POST /train        - Train new model")
     print("  GET  /model/info   - Get model information")
     print("="*70 + "\n")
-    
-    app.run(host='0.0.0.0', port=5005, debug=False)
+
+    app.run(host='0.0.0.0', port=50005, debug=False)

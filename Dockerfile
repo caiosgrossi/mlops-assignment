@@ -17,11 +17,11 @@ COPY app.py .
 RUN mkdir -p /app/models
 
 # Expor porta
-EXPOSE 5005
+EXPOSE 50005
 
 # Variáveis de ambiente
 ENV FLASK_APP=app.py
 ENV PYTHONUNBUFFERED=1
 
 # Comando para rodar com Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:5005", "--workers", "2", "--timeout", "600", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:50005", "--workers", "2", "--timeout", "600", "app:app"]
