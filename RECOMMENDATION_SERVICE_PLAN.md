@@ -9,7 +9,7 @@ Serviço Flask que fornece recomendações de músicas baseadas em regras de ass
 ## Estrutura de Arquivos
 
 ```
-/home/caiog/mlops-assignment/
+/home/caiogrossi/mlops-assignment/
 ├── training-service/          # Serviço de Treinamento
 │   ├── app.py
 │   ├── requirements.txt
@@ -22,7 +22,7 @@ Serviço Flask que fornece recomendações de músicas baseadas em regras de ass
 ```
 
 **Volume Compartilhado:**
-- Path: `/home/caiog/project2-pv/models`
+- Path: `/home/caiogrossi/project2-pv/models`
 - Training service: **ESCREVE** modelos (pkl + metadata.json)
 - Recommendation service: **LÊ** modelos (pkl + metadata.json)
 
@@ -609,7 +609,7 @@ recommendations = ["Let It Be", "Come Together", "Something", "Here Comes the Su
 ### Build da Imagem
 
 ```bash
-cd /home/caiog/mlops-assignment/recommendation-service
+cd /home/caiogrossi/mlops-assignment/recommendation-service
 docker build -t recommendation-service .
 ```
 
@@ -617,7 +617,7 @@ docker build -t recommendation-service .
 
 ```bash
 docker run -d -p 50005:50005 \
-  -v /home/caiog/project2-pv/models:/app/models \
+  -v /home/caiogrossi/project2-pv/models:/app/models \
   --name recommendation-container \
   recommendation-service
 ```
@@ -833,8 +833,8 @@ curl -X POST http://localhost:50005/api/recommender \
 
 ## Notas Importantes
 
-- **Formato de Input:** Apenas nomes de músicas (não precisa de artista)
+**Nota:** Formato de Input:** Apenas nomes de músicas (não precisa de artista)
 - **Matching:** Parcial - extrai nome da música do formato "Nome,Artista" do modelo
 - **Porta:** 50005 (não confundir com 5005 do training service)
 - **Endpoint:** `/api/recommender` (não `/api/recommend`)
-- **Volume:** Compartilhado com training service em `/home/caiog/project2-pv/models`
+- **Volume:** Compartilhado com training service em `/home/caiogrossi/project2-pv/models`
