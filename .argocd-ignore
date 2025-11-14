@@ -1,0 +1,22 @@
+# ArgoCD Ignore File
+# Prevents ArgoCD from processing these paths when syncing from Git
+
+# Python virtual environments (contains symlinks that cause ArgoCD errors)
+tests/test_venv/
+tests/test_venv/**
+
+# Python cache files
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# Trash and documentation
+trash/
+trash/**
+
+# Other files ArgoCD doesn't need to process
+*.md
+!k8s/README.md
+.git/
+.github/
+.gitignore
