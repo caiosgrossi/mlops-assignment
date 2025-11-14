@@ -325,12 +325,22 @@ def download_and_process_dataset(dataset_url):
 
 
 def validate_train_request(data):
-    """Valida request do POST /train"""
+    """
+    Valida request do POST /train
+    dataset_url pode vir do POST body ou da variável de ambiente DATASET_URL
+    """
+    # Se não houver data, tentar ler de env var
     if not data:
-        return False, "Request body vazio"
+        data = {}
     
+    # Priority: POST body > environment variable
     if 'dataset_url' not in data:
-        return False, "Campo 'dataset_url' é obrigatório"
+        # Try to get from environment variable
+        dataset_url_env = os.environ.get('DATASET_URL')
+        if dataset_url_env:
+            data['dataset_url'] = dataset_url_env
+        else:
+            return False, "Campo 'dataset_url' é obrigatório (via POST body ou variável de ambiente DATASET_URL)"
     
     url = data['dataset_url']
     if not isinstance(url, str) or not url.startswith(('http://', 'https://')):
@@ -355,6 +365,18 @@ def health():
         'service': 'music-recommendation-eclat',
         'timestamp': datetime.now().isoformat(),
         'port': 50005
+    }), 200
+
+
+@app.route('/dataset/info', methods=['GET'])
+def dataset_info():
+    """Show current dataset configuration from environment variables"""
+    return jsonify({
+        'dataset_url': os.environ.get('DATASET_URL', 'Not configured'),
+        'dataset_version': os.environ.get('DATASET_VERSION', 'Not configured'),
+        'dataset_name': os.environ.get('DATASET_NAME', 'Not configured'),
+        'source': 'environment_variables',
+        'note': 'POST /train can override dataset_url in request body'
     }), 200
 
 
@@ -388,7 +410,14 @@ def train_model():
         print("[TRAIN] New training request received")
         print("="*70)
         
-        data = request.get_json()
+        data = request.get_json() or {}
+        
+        # Priority: POST body > environment variable
+        if 'dataset_url' not in data:
+            dataset_url_env = os.environ.get('DATASET_URL')
+            if dataset_url_env:
+                data['dataset_url'] = dataset_url_env
+                print(f"[INFO] Using dataset URL from environment variable")
         
         # Validar request
         valid, error_msg = validate_train_request(data)
@@ -397,7 +426,9 @@ def train_model():
             return jsonify({'status': 'error', 'message': error_msg}), 400
         
         dataset_url = data['dataset_url']
+        dataset_version = os.environ.get('DATASET_VERSION', 'unknown')
         print(f"[TRAIN] Dataset URL: {dataset_url}")
+        print(f"[TRAIN] Dataset Version: {dataset_version}")
         
         # Download e processar dataset
         print("[TRAIN] Step 1/3: Downloading and processing dataset...")
