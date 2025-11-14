@@ -15,7 +15,7 @@ spec:
   
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: caiogrossi
   
   syncPolicy:
     automated:
