@@ -125,110 +125,110 @@ jobs:
       
       - name: Validate service port consistency
         run: |
-          python3 << 'EOF'
-import yaml
-import sys
-
-print("Validating service port consistency...")
-
-# Load deployment
-with open('k8s/deployment-training.yaml', 'r') as f:
-    deployment = yaml.safe_load(f)
-
-# Load service
-with open('k8s/service-training.yaml', 'r') as f:
-    service = yaml.safe_load(f)
-
-# Check container port
-container_port = deployment['spec']['template']['spec']['containers'][0]['ports'][0]['containerPort']
-print(f"Container port: {container_port}")
-
-# Check service port
-service_port = service['spec']['ports'][0]['port']
-target_port = service['spec']['ports'][0].get('targetPort', service_port)
-print(f"Service port: {service_port}, targetPort: {target_port}")
-
-# Validate
-if container_port != target_port:
-    print(f"ERROR: Port mismatch! Container={container_port}, Service targetPort={target_port}")
-    sys.exit(1)
-
-print("Port configuration is consistent!")
-EOF
+          python3 -c '
+          import yaml
+          import sys
+          
+          print("Validating service port consistency...")
+          
+          # Load deployment
+          with open("k8s/deployment-training.yaml", "r") as f:
+              deployment = yaml.safe_load(f)
+          
+          # Load service
+          with open("k8s/service-training.yaml", "r") as f:
+              service = yaml.safe_load(f)
+          
+          # Check container port
+          container_port = deployment["spec"]["template"]["spec"]["containers"][0]["ports"][0]["containerPort"]
+          print(f"Container port: {container_port}")
+          
+          # Check service port
+          service_port = service["spec"]["ports"][0]["port"]
+          target_port = service["spec"]["ports"][0].get("targetPort", service_port)
+          print(f"Service port: {service_port}, targetPort: {target_port}")
+          
+          # Validate
+          if container_port != target_port:
+              print(f"ERROR: Port mismatch! Container={container_port}, Service targetPort={target_port}")
+              sys.exit(1)
+          
+          print("Port configuration is consistent!")
+          '
       
       - name: Validate environment variable schema
         run: |
-          python3 << 'EOF'
-import yaml
-import sys
-
-print("Validating environment variables...")
-
-# Required env vars
-required_env_vars = ['DATASET_URL', 'DATASET_VERSION', 'DATASET_NAME']
-
-# Load deployment
-with open('k8s/deployment-training.yaml', 'r') as f:
-    deployment = yaml.safe_load(f)
-
-# Get env vars
-env_vars = deployment['spec']['template']['spec']['containers'][0].get('env', [])
-env_names = [e['name'] for e in env_vars]
-
-print(f"Found env vars: {env_names}")
-
-# Check required vars
-missing = [var for var in required_env_vars if var not in env_names]
-if missing:
-    print(f"ERROR: Missing required env vars: {missing}")
-    sys.exit(1)
-
-# Check they reference ConfigMap
-for env in env_vars:
-    if env['name'] in required_env_vars:
-        if 'valueFrom' not in env or 'configMapKeyRef' not in env['valueFrom']:
-            print(f"ERROR: {env['name']} does not reference ConfigMap")
-            sys.exit(1)
-
-print("Environment variables validated!")
-EOF
+          python3 -c '
+          import yaml
+          import sys
+          
+          print("Validating environment variables...")
+          
+          # Required env vars
+          required_env_vars = ["DATASET_URL", "DATASET_VERSION", "DATASET_NAME"]
+          
+          # Load deployment
+          with open("k8s/deployment-training.yaml", "r") as f:
+              deployment = yaml.safe_load(f)
+          
+          # Get env vars
+          env_vars = deployment["spec"]["template"]["spec"]["containers"][0].get("env", [])
+          env_names = [e["name"] for e in env_vars]
+          
+          print(f"Found env vars: {env_names}")
+          
+          # Check required vars
+          missing = [var for var in required_env_vars if var not in env_names]
+          if missing:
+              print(f"ERROR: Missing required env vars: {missing}")
+              sys.exit(1)
+          
+          # Check they reference ConfigMap
+          for env in env_vars:
+              if env["name"] in required_env_vars:
+                  if "valueFrom" not in env or "configMapKeyRef" not in env["valueFrom"]:
+                      print(f"ERROR: {env[\"name\"]} does not reference ConfigMap")
+                      sys.exit(1)
+          
+          print("Environment variables validated!")
+          '
       
       - name: Validate dataset configuration schema
         run: |
-          python3 << 'EOF'
-import yaml
-import re
-import sys
-
-print("Validating dataset configuration...")
-
-# Load dataset config
-with open('datasets/dataset-config.yaml', 'r') as f:
-    config = yaml.safe_load(f)
-
-dataset = config.get('dataset', {})
-
-# Check required fields
-required = ['url', 'version', 'name']
-missing = [f for f in required if f not in dataset]
-if missing:
-    print(f"ERROR: Missing fields in dataset config: {missing}")
-    sys.exit(1)
-
-# Validate URL format
-url = dataset['url']
-if not re.match(r'^https?://.+', url):
-    print(f"ERROR: Invalid URL format: {url}")
-    sys.exit(1)
-
-# Validate version (semver)
-version = dataset['version']
-if not re.match(r'^\d+\.\d+\.\d+$', version):
-    print(f"ERROR: Version must follow semver (X.Y.Z): {version}")
-    sys.exit(1)
-
-print(f"Dataset config validated: {dataset['name']} v{version}")
-EOF
+          python3 -c '
+          import yaml
+          import re
+          import sys
+          
+          print("Validating dataset configuration...")
+          
+          # Load dataset config
+          with open("datasets/dataset-config.yaml", "r") as f:
+              config = yaml.safe_load(f)
+          
+          dataset = config.get("dataset", {})
+          
+          # Check required fields
+          required = ["url", "version", "name"]
+          missing = [f for f in required if f not in dataset]
+          if missing:
+              print(f"ERROR: Missing fields in dataset config: {missing}")
+              sys.exit(1)
+          
+          # Validate URL format
+          url = dataset["url"]
+          if not re.match(r"^https?://.+", url):
+              print(f"ERROR: Invalid URL format: {url}")
+              sys.exit(1)
+          
+          # Validate version (semver)
+          version = dataset["version"]
+          if not re.match(r"^\d+\.\d+\.\d+$", version):
+              print(f"ERROR: Version must follow semver (X.Y.Z): {version}")
+              sys.exit(1)
+          
+          print(f"Dataset config validated: {dataset[\"name\"]} v{version}")
+          '
   
   # Job 4: Run actual unit tests (15 seconds)
   unit-tests:

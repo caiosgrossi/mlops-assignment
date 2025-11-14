@@ -40,39 +40,38 @@ jobs:
       - name: Check ConfigMap consistency
         run: |
           echo "Verifying dataset-config.yaml matches ConfigMap..."
-          cd tests
-          python3 -c "
-import yaml
-
-# Load dataset config
-with open('../datasets/dataset-config.yaml', 'r') as f:
-    dataset_config = yaml.safe_load(f)
-
-# Load ConfigMap
-with open('../k8s/configmap-dataset.yaml', 'r') as f:
-    configmap = yaml.safe_load(f)
-
-# Extract values
-ds = dataset_config['dataset']
-cm = configmap['data']
-
-# Check consistency
-errors = []
-if ds['url'] != cm['dataset.url']:
-    errors.append(f\"URL mismatch: {ds['url']} != {cm['dataset.url']}\")
-if ds['version'] != cm['dataset.version']:
-    errors.append(f\"Version mismatch: {ds['version']} != {cm['dataset.version']}\")
-if ds['name'] != cm['dataset.name']:
-    errors.append(f\"Name mismatch: {ds['name']} != {cm['dataset.name']}\")
-
-if errors:
-    print('ERROR: Dataset configuration is inconsistent!')
-    for error in errors:
-        print(f'  - {error}')
-    exit(1)
-else:
-    print('SUCCESS: Dataset configuration is consistent!')
-    print(f\"  URL: {ds['url']}\")
-    print(f\"  Version: {ds['version']}\")
-    print(f\"  Name: {ds['name']}\")
-"
+          python3 -c '
+          import yaml
+          
+          # Load dataset config
+          with open("datasets/dataset-config.yaml", "r") as f:
+              dataset_config = yaml.safe_load(f)
+          
+          # Load ConfigMap
+          with open("k8s/configmap-dataset.yaml", "r") as f:
+              configmap = yaml.safe_load(f)
+          
+          # Extract values
+          ds = dataset_config["dataset"]
+          cm = configmap["data"]
+          
+          # Check consistency
+          errors = []
+          if ds["url"] != cm["dataset.url"]:
+              errors.append(f"URL mismatch: {ds[\"url\"]} != {cm[\"dataset.url\"]}")
+          if ds["version"] != cm["dataset.version"]:
+              errors.append(f"Version mismatch: {ds[\"version\"]} != {cm[\"dataset.version\"]}")
+          if ds["name"] != cm["dataset.name"]:
+              errors.append(f"Name mismatch: {ds[\"name\"]} != {cm[\"dataset.name\"]}")
+          
+          if errors:
+              print("ERROR: Dataset configuration is inconsistent!")
+              for error in errors:
+                  print(f"  - {error}")
+              exit(1)
+          else:
+              print("SUCCESS: Dataset configuration is consistent!")
+              print(f"  URL: {ds[\"url\"]}")
+              print(f"  Version: {ds[\"version\"]}")
+              print(f"  Name: {ds[\"name\"]}")
+          '
