@@ -20,3 +20,6 @@ trash/**
 .git/
 .github/
 .gitignore
+
+# Prevent child app from processing master app-of-apps
+argocd/app-of-apps.yaml
