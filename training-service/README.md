@@ -268,3 +268,4 @@ After training completes:
    - Can hot-reload via `/reload-model` endpoint
 
 Both services share the volume at `/home/caiogrossi/project2-pv/models`.
+# Test automated deployment
