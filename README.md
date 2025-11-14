@@ -2,7 +2,7 @@
 
 A microservices-based music recommendation system using association rule mining (Eclat algorithm). The system consists of two services: a training service that discovers patterns in music playlists, and a recommendation service that provides real-time song suggestions.
 
-## 📋 Table of Contents
+##  Table of Contents
 
 - [Architecture](#architecture)
 - [Project Structure](#project-structure)
@@ -13,70 +13,70 @@ A microservices-based music recommendation system using association rule mining 
 - [Testing](#testing)
 - [Development](#development)
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    CLIENT APPLICATIONS                       │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-         ┌──────────────────────────────────────┐
-         │    Training Service (Port 50005)      │
-         │  - Train Eclat models                │
-         │  - Process datasets                  │
-         │  - Save models & metadata            │
-         └──────────────────┬───────────────────┘
-                            │
-                            ▼
-         ┌─────────────────────────────────────────┐
-         │   Shared Volume: /project2-pv/models    │
-         │  - association_rules_v*.pkl             │
-         │  - metadata.json                        │
-         └─────────────────┬───────────────────────┘
-                           │
-                           ▼
-         ┌──────────────────────────────────────┐
-         │  Recommendation Service (Port 50005) │
-         │  - Load trained models               │
-         │  - Serve recommendations             │
-         │  - Hot-reload capability             │
-         └──────────────────────────────────────┘
+
+                    CLIENT APPLICATIONS                       
+
+                            
+                            
+         
+             Training Service (Port 50005)      
+           - Train Eclat models                
+           - Process datasets                  
+           - Save models & metadata            
+         
+                            
+                            
+         
+            Shared Volume: /project2-pv/models    
+           - association_rules_v*.pkl             
+           - metadata.json                        
+         
+                           
+                           
+         
+           Recommendation Service (Port 50005) 
+           - Load trained models               
+           - Serve recommendations             
+           - Hot-reload capability             
+         
 ```
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 mlops-assignment/
-├── training-service/              # Model Training Service
-│   ├── app.py                     # Flask app with Eclat algorithm
-│   ├── requirements.txt           # Python dependencies
-│   ├── Dockerfile                 # Container image
-│   ├── .dockerignore              # Docker ignore patterns
-│   └── README.md                  # Service documentation
-│
-├── recommendation-service/        # Recommendation API Service
-│   ├── app.py                     # Flask app for recommendations
-│   ├── requirements.txt           # Python dependencies
-│   ├── Dockerfile                 # Container image
-│   ├── .dockerignore              # Docker ignore patterns
-│   └── README.md                  # Service documentation
-│
-├── tests/                         # Unit and Integration Tests
-│   ├── test_recommendation_service.py  # Recommendation tests
-│   ├── test_training_service.py        # Training tests
-│   ├── requirements.txt                # Test dependencies
-│   ├── run_all_tests.sh                # Run all tests
-│   ├── quick_test.sh                   # Quick test script
-│   └── README.md                       # Testing documentation
-│
-├── DATA_ANALYSIS.md               # Dataset analysis documentation
+ training-service/              # Model Training Service
+    app.py                     # Flask app with Eclat algorithm
+    requirements.txt           # Python dependencies
+    Dockerfile                 # Container image
+    .dockerignore              # Docker ignore patterns
+    README.md                  # Service documentation
+
+ recommendation-service/        # Recommendation API Service
+    app.py                     # Flask app for recommendations
+    requirements.txt           # Python dependencies
+    Dockerfile                 # Container image
+    .dockerignore              # Docker ignore patterns
+    README.md                  # Service documentation
+
+ tests/                         # Unit and Integration Tests
+    test_recommendation_service.py  # Recommendation tests
+    test_training_service.py        # Training tests
+    requirements.txt                # Test dependencies
+    run_all_tests.sh                # Run all tests
+    quick_test.sh                   # Quick test script
+    README.md                       # Testing documentation
+
+ DATA_ANALYSIS.md               # Dataset analysis documentation
 design
-├── BUILD_GUIDE.md                 # Build and deployment guide
-└── README.md                      # This file
+ BUILD_GUIDE.md                 # Build and deployment guide
+ README.md                      # This file
 ```
 
-## 🔧 Services
+##  Services
 
 ### Training Service (Port 50005)
 
@@ -108,7 +108,7 @@ design
 - `POST /api/recommender` - Get recommendations
 - `POST /reload-model` - Reload latest model
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 
@@ -161,7 +161,7 @@ curl http://localhost:50005/health
 curl http://localhost:50005/health
 ```
 
-## 🔄 Complete Workflow
+##  Complete Workflow
 
 ### Step 1: Train a Model
 
@@ -190,7 +190,7 @@ curl -X POST http://localhost:50005/train \
 }
 ```
 
-⏱️ **Training Time:** Approximately 5-10 minutes
+⏱ **Training Time:** Approximately 5-10 minutes
 
 ### Step 2: Reload Model in Recommendation Service
 
@@ -232,7 +232,7 @@ curl -X POST http://localhost:50005/api/recommender \
 }
 ```
 
-## 📚 API Documentation
+##  API Documentation
 
 ### Training Service API
 
@@ -279,7 +279,7 @@ POST http://localhost:50005/reload-model
 
 Hot-reload the latest trained model without restarting the service.
 
-## 🧪 Testing
+##  Testing
 
 The project includes comprehensive unit and integration tests for both services.
 
@@ -308,20 +308,20 @@ bash tests/quick_test.sh
 ### What Tests Cover
 
 **Recommendation Service Tests:**
-- ✅ Docker image building
-- ✅ Container deployment on port 50005
-- ✅ Health endpoint functionality
-- ✅ API error handling (empty input, invalid format)
-- ✅ **Recommendations using real songs from the dataset**
-- ✅ **Integration tests with association rules**
-- ✅ Response format validation
-- ✅ Consistency across multiple requests
+-  Docker image building
+-  Container deployment on port 50005
+-  Health endpoint functionality
+-  API error handling (empty input, invalid format)
+-  **Recommendations using real songs from the dataset**
+-  **Integration tests with association rules**
+-  Response format validation
+-  Consistency across multiple requests
 
 **Training Service Tests:**
-- ✅ Docker image building
-- ✅ Container deployment on port 50005
-- ✅ Health endpoint functionality
-- ✅ Model training workflow
+-  Docker image building
+-  Container deployment on port 50005
+-  Health endpoint functionality
+-  Model training workflow
 
 ### Key Features
 
@@ -354,7 +354,7 @@ Errors: 0
 
 See [tests/README.md](tests/README.md) for detailed testing documentation.
 
-## 🛠️ Development
+##  Development
 
 ### Local Development (Training Service)
 
@@ -393,7 +393,7 @@ docker stop training-container recommendation-container
 docker rm training-container recommendation-container
 ```
 
-## 📊 Performance Characteristics
+##  Performance Characteristics
 
 ### Training Service
 - **Training Time:** 5-10 minutes for ~240K transactions
@@ -407,7 +407,7 @@ docker rm training-container recommendation-container
 - **Timeout:** 120 seconds (2 minutes)
 - **Workers:** 2 Gunicorn workers
 
-## 🧪 Testing
+##  Testing
 
 ### Test Training Service
 
@@ -441,7 +441,7 @@ curl -X POST http://localhost:50005/api/recommender \
   -d '{"songs": []}'
 ```
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Training Service Returns 500
 - Check dataset URL is accessible
@@ -469,7 +469,7 @@ sudo lsof -i :50005
 # Kill the process or use different ports
 ```
 
-## 📝 Algorithm Details
+##  Algorithm Details
 
 ### Eclat Algorithm
 
@@ -493,15 +493,15 @@ The system uses the **Eclat (Equivalence Class Transformation)** algorithm:
 5. Filter out songs already in input
 6. Rank by score and return top 5
 
-## 📄 License
+##  License
 
 This project is part of an MLOps assignment.
 
-## 👥 Authors
+##  Authors
 
 - Caio Grossi
 
-## 🔗 Related Documents
+##  Related Documents
 
 - [DATA_ANALYSIS.md](DATA_ANALYSIS.md) - Dataset analysis
 - [DEPLOYMENT_STRATEGY.md](DEPLOYMENT_STRATEGY.md) - Deployment guidelines
