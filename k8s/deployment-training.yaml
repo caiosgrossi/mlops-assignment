@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: playlist-recommender-trainer
-        image: caiosgrossi/playlist-recommender-system:training-service-v1.0.1
+        image: caiosgrossi/playlist-recommender-system:training-service-v1.0.2
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 50005
