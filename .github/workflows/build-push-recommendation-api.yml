@@ -51,13 +51,11 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t caiosgrossi/playlist-recommender-system:recommendation-service-v${{ steps.version.outputs.VERSION }} \
-                       -t caiosgrossi/playlist-recommender-system:recommendation-service-latest \
                        recommendation-service/
 
       - name: Push Docker image
         run: |
           docker push caiosgrossi/playlist-recommender-system:recommendation-service-v${{ steps.version.outputs.VERSION }}
-          docker push caiosgrossi/playlist-recommender-system:recommendation-service-latest
 
       - name: Update Kubernetes manifest
         run: |
