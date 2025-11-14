@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - 'training-service/**'
-      - '.github/workflows/build-push-ml-job.yml'
+      - '.github/workflows/build-push-ml-service.yml'
 
 permissions:
   contents: write
