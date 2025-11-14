@@ -358,7 +358,7 @@ model_manager = ModelManager()
 
 
 @app.route('/health', methods=['GET'])
-def health()
+def health():
     return jsonify({
         'status': 'healthy',
         'service': 'music-recommendation-eclat',

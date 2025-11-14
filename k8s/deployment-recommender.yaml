@@ -7,11 +7,7 @@ metadata:
 spec:
   replicas: 2
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 1
-  minReadySeconds: 30
+    type: Recreate
   selector:
     matchLabels:
       app: caiogrossi-recommender
@@ -22,7 +18,8 @@ spec:
     spec:
       containers:
       - name: playlist-recommender
-        image: caiosgrossi/playlist-recommender-system:recommendation-service-v1.0.0
+        image: caiosgrossi/playlist-recommender-system:recommendation-service-v1.0.1
+        imagePullPolicy: Always
         ports:
         - containerPort: 50005
         volumeMounts:
