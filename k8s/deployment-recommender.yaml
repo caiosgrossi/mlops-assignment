@@ -1,0 +1,49 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: playlist-recommender-system
+  namespace: caiogrossi
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: caiogrossi-recommender
+  template:
+    metadata:
+      labels:
+        app: caiogrossi-recommender
+    spec:
+      containers:
+      - name: playlist-recommender
+        image: caiosgrossi/playlist-recommender-system:recommendation-service-0.1
+        ports:
+        - containerPort: 50005
+        volumeMounts:
+        - name: model-storage
+          mountPath: /app/models
+          subPath: dev
+          readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 50005
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 50005
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      volumes:
+      - name: model-storage
+        persistentVolumeClaim:
+          claimName: model-pvc

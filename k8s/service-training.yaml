@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: training-service
+  namespace: caiogrossi
+spec:
+  selector:
+    app: caiogrossi-recommender-trainer
+  ports:
+    - protocol: TCP
+      port: 5005
+      targetPort: 50005
+      name: http
+  type: ClusterIP

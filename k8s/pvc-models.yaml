@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: model-pvc
+  namespace: caiogrossi
+spec:
+  selector:
+    matchLabels:
+      namespace: caiogrossi
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: default-storage-class-caiogrossi
+  volumeName: project2-pv-caiogrossi
