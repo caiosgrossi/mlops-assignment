@@ -10,11 +10,11 @@ metadata:
 data:
   # Dataset URL - pointer to the actual dataset
   # Update this to change which dataset is used for training
-  dataset.url: "https://homepages.dcc.ufmg.br/~cunha/hosted/cloudcomp-2023s2-datasets/2023_spotify_ds1.csv"
+  dataset.url: "https://homepages.dcc.ufmg.br/~cunha/hosted/cloudcomp-2023s2-datasets/2023_spotify_ds2.csv"
   
   # Dataset version - semantic versioning
   # Change this to trigger new model training
-  dataset.version: "1.0.0"
+  dataset.version: "1.0.1"
   
   # Dataset name for reference
   dataset.name: "music-playlists"
