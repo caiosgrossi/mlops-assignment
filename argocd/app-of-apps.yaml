@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: playlist-recommender-apps
-  namespace: argocd
+  namespace: caiogrossi
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
