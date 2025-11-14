@@ -4,3 +4,9 @@ trash/
 TESTING_IMPLEMENTATION.md
 RECOMMENDATION_SERVICE_PLAN.md
 __pycache__/
+
+# Python virtual environments (should never be in Git)
+tests/test_venv/
+**/venv/
+**/.venv/
+**/env/
