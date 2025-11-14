@@ -358,17 +358,7 @@ model_manager = ModelManager()
 
 
 @app.route('/health', methods=['GET'])
-def health():
-    """Health check endpoint - DELIBERATELY BROKEN FOR ROLLBACK TEST"""
-    # This will cause the health check to fail after initial deployment
-    # Testing automatic rollback mechanism
-    import time
-    time.sleep(0.1)
-    
-    # Simulate a critical error that should trigger rollback
-    # The pod will start but then fail health checks
-    raise Exception("CRITICAL: Simulated application failure for rollback testing")
-    
+def health()
     return jsonify({
         'status': 'healthy',
         'service': 'music-recommendation-eclat',
