@@ -24,17 +24,22 @@ jobs:
       - name: Set version tag
         id: version
         run: |
-          # Get the current version from the manifest, increment patch version
-          CURRENT_VERSION=$(grep "image: caiosgrossi/playlist-recommender-system:training-service-" k8s/deployment-training.yaml | sed 's/.*training-service-v//' | sed 's/".*//')
-          if [[ -z "$CURRENT_VERSION" || "$CURRENT_VERSION" == *"0."* ]]; then
+          # Extract current version from manifest, handle both versioned tags and :latest
+          IMAGE_TAG=$(grep "image: caiosgrossi/playlist-recommender-system:training-service-" k8s/deployment-training.yaml | sed 's/.*training-service-//' | sed 's/".*//; s/ .*//')
+          
+          # If tag is 'latest' or doesn't match vX.Y.Z pattern, start at 1.0.0
+          if [[ "$IMAGE_TAG" == "latest" ]] || [[ ! "$IMAGE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             VERSION="1.0.0"
           else
+            # Extract version number (remove 'v' prefix if present)
+            CURRENT_VERSION=$(echo "$IMAGE_TAG" | sed 's/^v//')
             # Split version into major.minor.patch
             IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
             PATCH=$((PATCH + 1))
             VERSION="${MAJOR}.${MINOR}.${PATCH}"
           fi
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current tag: $IMAGE_TAG"
           echo "Building version: training-service-v$VERSION"
 
       - name: Login to DockerHub
@@ -56,7 +61,12 @@ jobs:
 
       - name: Update Kubernetes manifest
         run: |
-          sed -i "s|image: caiosgrossi/playlist-recommender-system:training-service-.*|image: caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.VERSION }}|g" k8s/deployment-training.yaml
+          # Update image tag in deployment manifest, handling any existing tag format
+          sed -i "s|image: caiosgrossi/playlist-recommender-system:training-service-[^[:space:]]*|image: caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.VERSION }}|g" k8s/deployment-training.yaml
+          
+          # Verify the update
+          echo "Updated manifest:"
+          grep "image: caiosgrossi/playlist-recommender-system:training-service-" k8s/deployment-training.yaml
 
       - name: Commit and push manifest change
         run: |

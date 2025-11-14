@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'recommendation-api/**'
+      - 'recommendation-service/**'
       - '.github/workflows/build-push-recommendation-api.yml'
 
 permissions:
@@ -24,21 +24,22 @@ jobs:
       - name: Set version tag
         id: version
         run: |
-          # Get the current version from the manifest, increment patch version
-          CURRENT_TAG=$(grep "image: caiosgrossi/playlist-recommender-system:recommendation-service-" k8s/deployment-recommender.yaml | sed 's/.*recommendation-service-//' | sed 's/".*//')
+          # Extract current version from manifest, handle both versioned tags and :latest
+          IMAGE_TAG=$(grep "image: caiosgrossi/playlist-recommender-system:recommendation-service-" k8s/deployment-recommender.yaml | sed 's/.*recommendation-service-//' | sed 's/".*//; s/ .*//')
           
-          # Check if current tag follows semantic versioning (vX.Y.Z)
-          if [[ "$CURRENT_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            # Extract version without 'v' prefix
-            CURRENT_VERSION="${CURRENT_TAG#v}"
+          # If tag is 'latest' or doesn't match vX.Y.Z pattern, start at 1.0.0
+          if [[ "$IMAGE_TAG" == "latest" ]] || [[ ! "$IMAGE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            VERSION="1.0.0"
+          else
+            # Extract version number (remove 'v' prefix if present)
+            CURRENT_VERSION=$(echo "$IMAGE_TAG" | sed 's/^v//')
+            # Split version into major.minor.patch
             IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
             PATCH=$((PATCH + 1))
             VERSION="${MAJOR}.${MINOR}.${PATCH}"
-          else
-            # Old format or first time, start with v1.0.0
-            VERSION="1.0.0"
           fi
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current tag: $IMAGE_TAG"
           echo "Building version: recommendation-service-v$VERSION"
 
       - name: Login to DockerHub
@@ -60,7 +61,12 @@ jobs:
 
       - name: Update Kubernetes manifest
         run: |
-          sed -i "s|image: caiosgrossi/playlist-recommender-system:recommendation-service-.*|image: caiosgrossi/playlist-recommender-system:recommendation-service-v${{ steps.version.outputs.VERSION }}|g" k8s/deployment-recommender.yaml
+          # Update image tag in deployment manifest, handling any existing tag format
+          sed -i "s|image: caiosgrossi/playlist-recommender-system:recommendation-service-[^[:space:]]*|image: caiosgrossi/playlist-recommender-system:recommendation-service-v${{ steps.version.outputs.VERSION }}|g" k8s/deployment-recommender.yaml
+          
+          # Verify the update
+          echo "Updated manifest:"
+          grep "image: caiosgrossi/playlist-recommender-system:recommendation-service-" k8s/deployment-recommender.yaml
 
       - name: Commit and push manifest change
         run: |
