@@ -4,6 +4,9 @@ kind: ConfigMap
 metadata:
   name: dataset-config
   namespace: caiogrossi
+  labels:
+    managed-by: argocd
+    app: playlist-recommender-system
 data:
   # Dataset URL - pointer to the actual dataset
   # Update this to change which dataset is used for training
