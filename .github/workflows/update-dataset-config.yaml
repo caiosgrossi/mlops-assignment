@@ -21,6 +21,15 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+
+      - name: Pull latest changes first
+        run: |
+          git pull --rebase origin main || true
+
       - name: Read dataset URL from file
         id: dataset
         run: |
@@ -68,13 +77,6 @@ jobs:
           
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "Version increment: $CURRENT_VERSION -> $NEW_VERSION"
-
-      - name: Pull latest changes before updating
-        if: steps.check_change.outputs.URL_CHANGED == 'true'
-        run: |
-          git config --global user.name "GitHub Actions Bot"
-          git config --global user.email "actions@github.com"
-          git pull --rebase origin main || echo "Already up to date"
 
       - name: Update ConfigMap
         if: steps.check_change.outputs.URL_CHANGED == 'true'
