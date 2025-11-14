@@ -69,6 +69,13 @@ jobs:
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "Version increment: $CURRENT_VERSION -> $NEW_VERSION"
 
+      - name: Pull latest changes before updating
+        if: steps.check_change.outputs.URL_CHANGED == 'true'
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+          git pull --rebase origin main || echo "Already up to date"
+
       - name: Update ConfigMap
         if: steps.check_change.outputs.URL_CHANGED == 'true'
         run: |
@@ -81,25 +88,24 @@ jobs:
       - name: Commit and push ConfigMap changes
         if: steps.check_change.outputs.URL_CHANGED == 'true'
         run: |
-          git config --global user.name "GitHub Actions Bot"
-          git config --global user.email "actions@github.com"
-          
-          git pull --rebase origin main
           git add k8s/configmap-dataset.yaml
           
-          git commit -m "chore: Update dataset configuration to v${{ steps.new_version.outputs.NEW_VERSION }}
-          
-          Dataset URL changed:
-          - Old: ${{ steps.current.outputs.CURRENT_URL }}
-          - New: ${{ steps.dataset.outputs.DATASET_URL }}
-          
-          Version: ${{ steps.current.outputs.CURRENT_VERSION }} -> ${{ steps.new_version.outputs.NEW_VERSION }}
-          
-          This will trigger ArgoCD sync and automatic model retraining."
-          
-          git pull --rebase origin main
-          git push
-          echo "ConfigMap updated and pushed to Git"
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: Update dataset configuration to v${{ steps.new_version.outputs.NEW_VERSION }}
+            
+            Dataset URL changed:
+            - Old: ${{ steps.current.outputs.CURRENT_URL }}
+            - New: ${{ steps.dataset.outputs.DATASET_URL }}
+            
+            Version: ${{ steps.current.outputs.CURRENT_VERSION }} -> ${{ steps.new_version.outputs.NEW_VERSION }}
+            
+            This will trigger ArgoCD sync and automatic model retraining."
+            
+            git push
+            echo "ConfigMap updated and pushed to Git"
+          fi
 
       - name: Workflow summary
         run: |
