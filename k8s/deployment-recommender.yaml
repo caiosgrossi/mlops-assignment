@@ -5,7 +5,7 @@ metadata:
   name: playlist-recommender-system
   namespace: caiogrossi
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: Recreate
   selector:
