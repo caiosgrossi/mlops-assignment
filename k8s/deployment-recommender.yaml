@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: playlist-recommender
-        image: caiosgrossi/playlist-recommender-system:recommendation-service-20251114-211522-3b3ce22
+        image: caiosgrossi/playlist-recommender-system:recommendation-service-v1.0.0
         ports:
         - containerPort: 50005
         volumeMounts:
