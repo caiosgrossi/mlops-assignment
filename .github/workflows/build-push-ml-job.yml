@@ -7,6 +7,9 @@ on:
       - 'training-service/**'
       - '.github/workflows/build-push-ml-job.yml'
 
+permissions:
+  contents: write
+
 jobs:
   build-and-deploy-training:
     runs-on: ubuntu-latest
