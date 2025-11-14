@@ -1,4 +1,4 @@
-name: Build and Push ML Job
+name: Build and Push Recommendation API
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  build-and-deploy-training:
+  build-and-deploy-recommendation:
     runs-on: ubuntu-latest
     
     steps:
@@ -25,7 +25,7 @@ jobs:
         id: version
         run: |
           # Get the current version from the manifest, increment patch version
-          CURRENT_TAG=$(grep "image: caiosgrossi/playlist-recommender-system:training-service-" k8s/deployment-training.yaml | sed 's/.*training-service-//' | sed 's/".*//')
+          CURRENT_TAG=$(grep "image: caiosgrossi/playlist-recommender-system:recommendation-service-" k8s/deployment-recommender.yaml | sed 's/.*recommendation-service-//' | sed 's/".*//')
           
           # Check if current tag follows semantic versioning (vX.Y.Z)
           if [[ "$CURRENT_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -39,7 +39,7 @@ jobs:
             VERSION="1.0.0"
           fi
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "Building version: training-service-v$VERSION"
+          echo "Building version: recommendation-service-v$VERSION"
 
       - name: Login to DockerHub
         uses: docker/login-action@v2
@@ -49,36 +49,36 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.VERSION }} \
-                       -t caiosgrossi/playlist-recommender-system:training-service-latest \
-                       training-service/
+          docker build -t caiosgrossi/playlist-recommender-system:recommendation-service-v${{ steps.version.outputs.VERSION }} \
+                       -t caiosgrossi/playlist-recommender-system:recommendation-service-latest \
+                       recommendation-service/
 
       - name: Push Docker image
         run: |
-          docker push caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.VERSION }}
-          docker push caiosgrossi/playlist-recommender-system:training-service-latest
+          docker push caiosgrossi/playlist-recommender-system:recommendation-service-v${{ steps.version.outputs.VERSION }}
+          docker push caiosgrossi/playlist-recommender-system:recommendation-service-latest
 
       - name: Update Kubernetes manifest
         run: |
-          sed -i "s|image: caiosgrossi/playlist-recommender-system:training-service-.*|image: caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.VERSION }}|g" k8s/deployment-training.yaml
+          sed -i "s|image: caiosgrossi/playlist-recommender-system:recommendation-service-.*|image: caiosgrossi/playlist-recommender-system:recommendation-service-v${{ steps.version.outputs.VERSION }}|g" k8s/deployment-recommender.yaml
 
       - name: Commit and push manifest change
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
-          git add k8s/deployment-training.yaml
+          git add k8s/deployment-recommender.yaml
           
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Update ML training job to version v${{ steps.version.outputs.VERSION }}"
+            git commit -m "Update Recommendation API to version v${{ steps.version.outputs.VERSION }}"
             git pull --rebase origin main
             git push
           fi
 
       - name: Workflow summary
         run: |
-          echo "ML Training Job Build Complete"
-          echo "Image: caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.VERSION }}"
-          echo "Manifest: k8s/deployment-training.yaml updated"
+          echo "Recommendation API Build Complete"
+          echo "Image: caiosgrossi/playlist-recommender-system:recommendation-service-v${{ steps.version.outputs.VERSION }}"
+          echo "Manifest: k8s/deployment-recommender.yaml updated"
           echo "ArgoCD will automatically deploy this version"

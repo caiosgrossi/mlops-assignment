@@ -1,4 +1,4 @@
-name: Build and Push ML Job
+name: Build and Push ML Service
 
 on:
   push:
