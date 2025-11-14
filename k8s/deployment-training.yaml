@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: playlist-recommender-trainer
-        image: caiosgrossi/playlist-recommender-system:training-service-20251114-211523-3b3ce22
+        image: caiosgrossi/playlist-recommender-system:training-service-v1.0.0
         ports:
         - containerPort: 50005
         env:
