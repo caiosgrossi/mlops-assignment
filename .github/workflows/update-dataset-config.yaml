@@ -97,6 +97,7 @@ jobs:
           
           This will trigger ArgoCD sync and automatic model retraining."
           
+          git pull --rebase origin main
           git push
           echo "ConfigMap updated and pushed to Git"
 
