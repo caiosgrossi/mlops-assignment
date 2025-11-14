@@ -1,0 +1,137 @@
+name: Deployment Verification
+
+on:
+  workflow_run:
+    workflows: ["CI Build and Validate"]
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  wait-for-argocd:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+      
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+      
+      - name: Wait for ArgoCD sync and pods ready
+        run: |
+          echo "Waiting for ArgoCD to sync and pods to be ready..."
+          MAX_WAIT=120  # 2 minutes timeout
+          WAIT_INTERVAL=5
+          ELAPSED=0
+          
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            # Check training service pod
+            TRAINING_READY=$(kubectl get pods -n caiogrossi -l app=training-service -o jsonpath='{.items[0].status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "False")
+            
+            # Check recommendation service pod
+            RECOMMENDATION_READY=$(kubectl get pods -n caiogrossi -l app=recommendation-service -o jsonpath='{.items[0].status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "False")
+            
+            if [ "$TRAINING_READY" == "True" ] && [ "$RECOMMENDATION_READY" == "True" ]; then
+              echo "ArgoCD sync complete - all pods are ready!"
+              kubectl get pods -n caiogrossi
+              exit 0
+            fi
+            
+            echo "Waiting for pods... (${ELAPSED}s/${MAX_WAIT}s)"
+            echo "  Training service ready: $TRAINING_READY"
+            echo "  Recommendation service ready: $RECOMMENDATION_READY"
+            
+            sleep $WAIT_INTERVAL
+            ELAPSED=$((ELAPSED + WAIT_INTERVAL))
+          done
+          
+          echo "Timeout waiting for ArgoCD sync and pods to be ready"
+          kubectl get pods -n caiogrossi
+          exit 1
+  
+  verify-deployment:
+    needs: wait-for-argocd
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install test dependencies
+        run: |
+          cd tests
+          pip install -r requirements.txt
+      
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+      
+      - name: Set up port forwarding
+        run: |
+          # Port forward training service
+          kubectl port-forward -n caiogrossi svc/training-service 50005:50005 &
+          
+          # Port forward recommendation service  
+          kubectl port-forward -n caiogrossi svc/recommendation-service 50006:50006 &
+          
+          # Wait for port forwards to be ready
+          sleep 5
+      
+      - name: Run deployment tests
+        id: run_tests
+        env:
+          CI: 'true'
+          K8S_NAMESPACE: 'caiogrossi'
+          TRAINING_SERVICE_URL: 'http://localhost:50005'
+          RECOMMENDATION_SERVICE_URL: 'http://localhost:50006'
+        run: |
+          cd tests
+          python3 -m unittest discover deploy -v
+      
+      - name: Rollback on deployment failure
+        if: failure()
+        run: |
+          echo "Deployment verification FAILED - initiating automatic rollback"
+          echo "Rolling back to previous stable version..."
+          
+          # Rollback recommendation service
+          kubectl rollout undo deployment/playlist-recommender-system -n caiogrossi
+          echo "Rolled back recommendation service"
+          
+          # Rollback training service
+          kubectl rollout undo deployment/playlist-recommender-system-trainer-ds1-0-0 -n caiogrossi
+          echo "Rolled back training service"
+          
+          # Wait for rollback to complete
+          echo "Waiting for rollback to complete..."
+          kubectl rollout status deployment/playlist-recommender-system -n caiogrossi --timeout=120s
+          kubectl rollout status deployment/playlist-recommender-system-trainer-ds1-0-0 -n caiogrossi --timeout=120s
+          
+          # Show final status
+          echo "Rollback complete. Current pod status:"
+          kubectl get pods -n caiogrossi
+          
+          exit 1
+      
+      - name: Report deployment status
+        if: success()
+        run: |
+          echo "Deployment verification PASSED"
+          echo "All services are healthy and responding correctly"
+          kubectl get pods -n caiogrossi

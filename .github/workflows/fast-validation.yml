@@ -1,0 +1,288 @@
+name: Fast Validation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # Job 1: Static Manifest Validation (15 seconds)
+  validate-manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Validate YAML syntax
+        run: |
+          # Install yamllint
+          pip install yamllint
+          
+          # Validate all YAML files
+          yamllint -d "{extends: default, rules: {line-length: {max: 120}, indentation: {spaces: 2}}}" k8s/*.yaml datasets/*.yaml
+      
+      - name: Validate Kubernetes manifests with kubeval
+        run: |
+          # Install kubeval
+          wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
+          tar xf kubeval-linux-amd64.tar.gz
+          sudo mv kubeval /usr/local/bin
+          
+          # Validate all K8s manifests
+          echo "Validating Kubernetes manifests..."
+          kubeval --strict k8s/*.yaml
+      
+      - name: Check Kubernetes best practices with kube-score
+        run: |
+          # Install kube-score
+          wget https://github.com/zegl/kube-score/releases/latest/download/kube-score_linux_amd64
+          chmod +x kube-score_linux_amd64
+          sudo mv kube-score_linux_amd64 /usr/local/bin/kube-score
+          
+          # Score all manifests
+          echo "Checking best practices..."
+          kube-score score k8s/*.yaml || true  # Don't fail on warnings
+      
+      - name: Validate ConfigMap references
+        run: |
+          echo "Checking that deployments reference ConfigMap correctly..."
+          
+          # Check training deployment references configmap
+          if ! grep -q "configMapKeyRef" k8s/deployment-training.yaml; then
+            echo "ERROR: Training deployment does not reference ConfigMap"
+            exit 1
+          fi
+          
+          # Check configmap has required keys
+          if ! grep -q "dataset.url" k8s/configmap-dataset.yaml; then
+            echo "ERROR: ConfigMap missing dataset.url"
+            exit 1
+          fi
+          
+          echo "ConfigMap references validated"
+  
+  # Job 2: Security & Policy Checks (10 seconds)
+  security-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Check for secrets in code
+        run: |
+          echo "Scanning for exposed secrets..."
+          
+          # Check for common secret patterns
+          if grep -r -i "password\|secret\|token\|key" --include="*.yaml" --include="*.yml" k8s/ | grep -v "secretKeyRef\|configMapKeyRef"; then
+            echo "WARNING: Potential secrets found in manifests"
+            # Don't fail, just warn
+          fi
+          
+          echo "Secret scan complete"
+      
+      - name: Check image tags are not 'latest'
+        run: |
+          echo "Checking Docker image tags..."
+          
+          if grep -r "image:.*:latest" k8s/*.yaml; then
+            echo "WARNING: Found images using 'latest' tag"
+            echo "Consider using specific version tags for reproducibility"
+          fi
+          
+          echo "Image tag check complete"
+      
+      - name: Validate resource limits
+        run: |
+          echo "Checking resource limits..."
+          
+          # Check if deployments have resource limits
+          for deployment in k8s/deployment-*.yaml; do
+            if ! grep -q "limits:" "$deployment"; then
+              echo "WARNING: $deployment missing resource limits"
+            fi
+          done
+          
+          echo "Resource limit check complete"
+  
+  # Job 3: Contract Testing (30 seconds)
+  contract-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install pyyaml jsonschema requests
+      
+      - name: Validate service port consistency
+        run: |
+          python3 << 'EOF'
+import yaml
+import sys
+
+print("Validating service port consistency...")
+
+# Load deployment
+with open('k8s/deployment-training.yaml', 'r') as f:
+    deployment = yaml.safe_load(f)
+
+# Load service
+with open('k8s/service-training.yaml', 'r') as f:
+    service = yaml.safe_load(f)
+
+# Check container port
+container_port = deployment['spec']['template']['spec']['containers'][0]['ports'][0]['containerPort']
+print(f"Container port: {container_port}")
+
+# Check service port
+service_port = service['spec']['ports'][0]['port']
+target_port = service['spec']['ports'][0].get('targetPort', service_port)
+print(f"Service port: {service_port}, targetPort: {target_port}")
+
+# Validate
+if container_port != target_port:
+    print(f"ERROR: Port mismatch! Container={container_port}, Service targetPort={target_port}")
+    sys.exit(1)
+
+print("Port configuration is consistent!")
+EOF
+      
+      - name: Validate environment variable schema
+        run: |
+          python3 << 'EOF'
+import yaml
+import sys
+
+print("Validating environment variables...")
+
+# Required env vars
+required_env_vars = ['DATASET_URL', 'DATASET_VERSION', 'DATASET_NAME']
+
+# Load deployment
+with open('k8s/deployment-training.yaml', 'r') as f:
+    deployment = yaml.safe_load(f)
+
+# Get env vars
+env_vars = deployment['spec']['template']['spec']['containers'][0].get('env', [])
+env_names = [e['name'] for e in env_vars]
+
+print(f"Found env vars: {env_names}")
+
+# Check required vars
+missing = [var for var in required_env_vars if var not in env_names]
+if missing:
+    print(f"ERROR: Missing required env vars: {missing}")
+    sys.exit(1)
+
+# Check they reference ConfigMap
+for env in env_vars:
+    if env['name'] in required_env_vars:
+        if 'valueFrom' not in env or 'configMapKeyRef' not in env['valueFrom']:
+            print(f"ERROR: {env['name']} does not reference ConfigMap")
+            sys.exit(1)
+
+print("Environment variables validated!")
+EOF
+      
+      - name: Validate dataset configuration schema
+        run: |
+          python3 << 'EOF'
+import yaml
+import re
+import sys
+
+print("Validating dataset configuration...")
+
+# Load dataset config
+with open('datasets/dataset-config.yaml', 'r') as f:
+    config = yaml.safe_load(f)
+
+dataset = config.get('dataset', {})
+
+# Check required fields
+required = ['url', 'version', 'name']
+missing = [f for f in required if f not in dataset]
+if missing:
+    print(f"ERROR: Missing fields in dataset config: {missing}")
+    sys.exit(1)
+
+# Validate URL format
+url = dataset['url']
+if not re.match(r'^https?://.+', url):
+    print(f"ERROR: Invalid URL format: {url}")
+    sys.exit(1)
+
+# Validate version (semver)
+version = dataset['version']
+if not re.match(r'^\d+\.\d+\.\d+$', version):
+    print(f"ERROR: Version must follow semver (X.Y.Z): {version}")
+    sys.exit(1)
+
+print(f"Dataset config validated: {dataset['name']} v{version}")
+EOF
+  
+  # Job 4: Run actual unit tests (15 seconds)
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install test dependencies
+        run: |
+          cd tests
+          pip install -r requirements.txt
+      
+      - name: Run manifest validation tests
+        run: |
+          cd tests
+          python3 -m unittest ci.test_k8s_manifests -v
+      
+      - name: Run config validation tests
+        run: |
+          cd tests
+          python3 -m unittest config.test_dataset_config -v
+  
+  # Job 5: Summary Report
+  summary:
+    needs: [validate-manifests, security-checks, contract-tests, unit-tests]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check all jobs passed
+        run: |
+          echo "=========================================="
+          echo "FAST VALIDATION SUMMARY"
+          echo "=========================================="
+          echo "1. Manifest Validation: ${{ needs.validate-manifests.result }}"
+          echo "2. Security Checks: ${{ needs.security-checks.result }}"
+          echo "3. Contract Tests: ${{ needs.contract-tests.result }}"
+          echo "4. Unit Tests: ${{ needs.unit-tests.result }}"
+          echo "=========================================="
+          
+          if [[ "${{ needs.validate-manifests.result }}" == "success" ]] && \
+             [[ "${{ needs.security-checks.result }}" == "success" ]] && \
+             [[ "${{ needs.contract-tests.result }}" == "success" ]] && \
+             [[ "${{ needs.unit-tests.result }}" == "success" ]]; then
+            echo "ALL VALIDATIONS PASSED"
+            echo "Safe to proceed with Docker build"
+            exit 0
+          else
+            echo "SOME VALIDATIONS FAILED"
+            echo "Check job logs above"
+            exit 1
+          fi

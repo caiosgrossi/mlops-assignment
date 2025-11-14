@@ -1,0 +1,78 @@
+name: Dataset Configuration Check
+
+on:
+  push:
+    paths:
+      - 'datasets/**'
+      - 'k8s/configmap-dataset.yaml'
+    branches:
+      - main
+  pull_request:
+    paths:
+      - 'datasets/**'
+      - 'k8s/configmap-dataset.yaml'
+
+jobs:
+  validate-dataset-config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install test dependencies
+        run: |
+          cd tests
+          pip install -r requirements.txt
+      
+      - name: Run dataset configuration tests
+        env:
+          CI: 'true'
+          CHECK_URL_ACCESSIBILITY: 'true'
+        run: |
+          cd tests
+          python3 -m unittest discover config -v
+      
+      - name: Check ConfigMap consistency
+        run: |
+          echo "Verifying dataset-config.yaml matches ConfigMap..."
+          cd tests
+          python3 -c "
+import yaml
+
+# Load dataset config
+with open('../datasets/dataset-config.yaml', 'r') as f:
+    dataset_config = yaml.safe_load(f)
+
+# Load ConfigMap
+with open('../k8s/configmap-dataset.yaml', 'r') as f:
+    configmap = yaml.safe_load(f)
+
+# Extract values
+ds = dataset_config['dataset']
+cm = configmap['data']
+
+# Check consistency
+errors = []
+if ds['url'] != cm['dataset.url']:
+    errors.append(f\"URL mismatch: {ds['url']} != {cm['dataset.url']}\")
+if ds['version'] != cm['dataset.version']:
+    errors.append(f\"Version mismatch: {ds['version']} != {cm['dataset.version']}\")
+if ds['name'] != cm['dataset.name']:
+    errors.append(f\"Name mismatch: {ds['name']} != {cm['dataset.name']}\")
+
+if errors:
+    print('ERROR: Dataset configuration is inconsistent!')
+    for error in errors:
+        print(f'  - {error}')
+    exit(1)
+else:
+    print('SUCCESS: Dataset configuration is consistent!')
+    print(f\"  URL: {ds['url']}\")
+    print(f\"  Version: {ds['version']}\")
+    print(f\"  Name: {ds['name']}\")
+"
