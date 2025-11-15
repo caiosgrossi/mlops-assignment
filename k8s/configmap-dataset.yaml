@@ -14,7 +14,7 @@ data:
   
   # Dataset version - semantic versioning
   # Change this to trigger new model training
-  dataset.version: "1.0.0"
+  dataset.version: "2.0.0"
   
   # Dataset name for reference
   dataset.name: "music-playlists"

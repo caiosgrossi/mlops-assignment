@@ -2,11 +2,11 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: training-job-v1-0-0
+  name: training-job-v2-0-0
   namespace: caiogrossi
   labels:
     app: caiogrossi-recommender-trainer
-    version: "1.0.0"
+    version: "2.0.0"
     managed-by: argocd
 spec:
   ttlSecondsAfterFinished: 600
@@ -19,7 +19,7 @@ spec:
       restartPolicy: OnFailure
       containers:
       - name: training-job
-        image: caiosgrossi/playlist-recommender-system:training-job-v1.0.0
+        image: caiosgrossi/playlist-recommender-system:training-job-v2.0.0
         imagePullPolicy: IfNotPresent
         env:
         - name: DATASET_URL
