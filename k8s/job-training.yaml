@@ -2,11 +2,11 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: training-job-v3-0-0
+  name: training-job-v3-0-1
   namespace: caiogrossi
   labels:
     app: caiogrossi-recommender-trainer
-    version: "3.0.0"
+    version: "3.0.1"
     managed-by: argocd
 spec:
   ttlSecondsAfterFinished: 600
