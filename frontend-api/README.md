@@ -11,213 +11,34 @@ This service reads pre-trained models from a shared directory and returns song r
 - **Port:** 50005
 - **Models Directory:** `/app/models` (mounted from `/home/caiogrossi/project2-pv/models`)
 - **Access:** Read-only access to models
-- **Dependencies:** Minimal (Flask + Gunicorn only)
+# Music Recommendation Service (brief)
 
-## API Endpoints
+Flask-based REST API that serves recommendations from association-rule models (stored under `/app/models`).
 
-### 1. Health Check
+Key points
+- The repository is configured so that any change to the code or to the dataset URL triggers a new training job and an API update via GitHub Actions + ArgoCD. Changes are applied automatically; no manual redeploy is required.
+- You can use the included `client.sh` or deploy the ArgoCD App-of-Apps (`manifest/manifest-argosystem.yaml` and `manifest/manifest-argoapp.yaml`) to run everything in-cluster.
+
+Quick usage
+- Health: `GET /health`
+- Recommend: `POST /api/recommender` with JSON `{"songs": ["Song A", "Song B"]}`
+- Reload model: `POST /reload-model` (hot-reload)
+
+Models
+- Models and `metadata.json` live in `/app/models` inside the container (mount a PVC or a host path to this location).
+
+Build and run (local, succinct)
+1. Build API image:
 ```bash
-GET /health
+cd project-delivery/flask-api
+docker build -f ../docker/Dockerfile.api -t recommendation-api:latest .
 ```
-
-**Response:**
-```json
-{
-  "status": "healthy",
-  "service": "music-recommendation-api",
-  "model_loaded": true,
-  "model_version": "1.0",
-  "timestamp": "2025-11-09T20:00:00",
-  "port": 50005
-}
-```
-
-### 2. Get Recommendations
+2. Run API (mount models):
 ```bash
-POST /api/recommender
-Content-Type: application/json
-
-{
-  "songs": ["Yesterday", "Bohemian Rhapsody", "Hotel California"]
-}
+docker run -d --name recommendation-api-local -p 50005:50005 \
+  -v /path/to/models:/app/models:ro recommendation-api:latest
 ```
 
-**Success Response (200):**
-```json
-{
-  "songs": ["Hey Jude", "Let It Be", "Come Together", "Something", "Here Comes the Sun"],
-  "version": "1.0",
-  "model_date": "2025-11-09T20:00:00"
-}
-```
+If you prefer Kubernetes, apply the repository Argo manifests (see top-level README). The CI workflows handle image tagging and manifest updates automatically.
 
-**Error Responses:**
-- `503`: No trained model available
-- `400`: Invalid input (missing songs, wrong format, etc.)
-- `500`: Internal server error
-
-### 3. Reload Model
-```bash
-POST /reload-model
-```
-
-Hot-reload the latest model without restarting the service.
-
-**Response:**
-```json
-{
-  "status": "success",
-  "version": "2.0",
-  "model_date": "2025-11-09T21:00:00"
-}
-```
-
-## Building and Running
-
-### Build Docker Image
-```bash
-cd /home/caiogrossi/mlops-assignment/recommendation-service
-docker build -t recommendation-service .
-```
-
-### Run Container
-```bash
-docker run -d -p 50005:50005 \
-  -v /home/caiogrossi/project2-pv/models:/app/models \
-  --name recommendation-container \
-  recommendation-service
-```
-
-### View Logs
-```bash
-docker logs -f recommendation-container
-```
-
-### Stop Container
-```bash
-docker stop recommendation-container
-docker rm recommendation-container
-```
-
-## Usage Examples
-
-### Test Health
-```bash
-curl http://localhost:50005/health
-```
-
-### Get Recommendations
-```bash
-curl -X POST http://localhost:50005/api/recommender \
-  -H "Content-Type: application/json" \
-  -d '{"songs": ["Paradise", "Fix You"]}'
-```
-
-### Reload Model (after training)
-```bash
-curl -X POST http://localhost:50005/reload-model
-```
-
-## Complete Workflow
-
-### 1. Train Model (Training Service)
-```bash
-curl -X POST http://localhost:5005/train \
-  -H "Content-Type: application/json" \
-  -d '{"dataset_url": "https://homepages.dcc.ufmg.br/~cunha/hosted/cloudcomp-2023s2-datasets/2023_spotify_ds1.csv"}'
-```
-
-Wait for training to complete (~5-10 minutes).
-
-### 2. Reload Model (Recommendation Service)
-```bash
-curl -X POST http://localhost:50005/reload-model
-```
-
-### 3. Get Recommendations
-```bash
-curl -X POST http://localhost:50005/api/recommender \
-  -H "Content-Type: application/json" \
-  -d '{"songs": ["Paradise", "Fix You"]}'
-```
-
-## How It Works
-
-### Recommendation Algorithm
-
-1. **Input Normalization**: Convert song names to lowercase for case-insensitive matching
-2. **Rule Matching**: Check which association rules apply to the input songs
-3. **Score Calculation**: Score = confidence × lift for each rule
-4. **Candidate Collection**: Gather recommended songs from rule consequents
-5. **Filtering**: Remove songs already in the input
-6. **Ranking**: Sort by score and return top 5
-
-### Partial Matching
-
-The service handles partial matching intelligently:
-- Model stores: `"Yesterday,Beatles"`
-- Client sends: `"Yesterday"`
-- Service extracts song name and matches successfully
-
-## Error Handling
-
-| Scenario | Status Code | Response |
-|----------|-------------|----------|
-| No model available | 503 | `{"error": "No trained model available"}` |
-| Empty songs list | 400 | `{"error": "'songs' não pode ser vazia"}` |
-| Invalid format | 400 | `{"error": "'songs' deve ser uma lista"}` |
-| No recommendations found | 200 | `{"songs": [], "version": "1.0", ...}` |
-| Unknown songs | 200 | `{"songs": [], "version": "1.0", ...}` |
-
-## Performance
-
-- **Response Time**: <100ms for ~10,000 rules
-- **Memory**: ~100-200 MB
-- **Workers**: 2 Gunicorn workers
-- **Timeout**: 120 seconds
-
-## Development
-
-### Local Testing (without Docker)
-```bash
-cd recommendation-service
-pip install -r requirements.txt
-
-# Set models directory
-export MODELS_DIR=/home/caiogrossi/project2-pv/models
-
-# Run Flask app
-python app.py
-```
-
-The service will be available at `http://localhost:50005`.
-
-## Comparison with Training Service
-
-| Aspect | Training Service | Recommendation Service |
-|--------|------------------|------------------------|
-| Port | 5005 | 50005 |
-| Function | Train Eclat models | Serve recommendations |
-| Volume Access | Read/Write | Read-only |
-| Dependencies | Heavy (pandas, etc.) | Light (Flask only) |
-| Timeout | 600s | 120s |
-| CPU Usage | High during training | Low |
-| Memory | 1-2 GB | 100-200 MB |
-
-## Troubleshooting
-
-### Service returns 503
-- Check if model has been trained
-- Verify shared volume is mounted correctly
-- Check metadata.json exists in `/app/models`
-
-### Empty recommendations
-- This is normal if:
-  - Songs are unknown to the model
-  - No association rules match the input
-  - Try with different song combinations
-
-### Model not updating
-- Use `/reload-model` endpoint after training
-- Verify metadata.json shows correct current_version
-- Check file permissions on shared volume
+For a fuller, developer-friendly README see the top-level repository README.
