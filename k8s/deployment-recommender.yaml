@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: frontend-api
-        image: caiosgrossi/playlist-recommender-system:frontend-api-v1.0.2
+        image: caiosgrossi/playlist-recommender-system:frontend-api-v1.0.3
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 50005
