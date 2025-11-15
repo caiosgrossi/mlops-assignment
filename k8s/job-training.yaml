@@ -19,7 +19,7 @@ spec:
       restartPolicy: OnFailure
       containers:
       - name: training-job
-        image: caiosgrossi/playlist-recommender-system:training-job-v1.0.0
+        image: caiosgrossi/playlist-recommender-system:training-job-v1.0.1
         imagePullPolicy: IfNotPresent
         env:
         - name: DATASET_URL
