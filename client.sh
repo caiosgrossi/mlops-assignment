@@ -4,7 +4,17 @@
 # Usage: ./client.sh song1 song2 song3 ...
 
 # Configuration
-API_URL="${FRONTEND_API_URL:-http://frontend-api-service.caiogrossi.svc.cluster.local:5006/api/recommender}"
+# Try to get ClusterIP from kubectl, fallback to hardcoded IP
+if command -v kubectl >/dev/null 2>&1; then
+    CLUSTER_IP=$(kubectl get svc frontend-api-service -n caiogrossi -o jsonpath='{.spec.clusterIP}' 2>/dev/null)
+    if [ -n "$CLUSTER_IP" ]; then
+        API_URL="${FRONTEND_API_URL:-http://$CLUSTER_IP:5006/api/recommender}"
+    else
+        API_URL="${FRONTEND_API_URL:-http://10.43.219.183:5006/api/recommender}"
+    fi
+else
+    API_URL="${FRONTEND_API_URL:-http://10.43.219.183:5006/api/recommender}"
+fi
 OUTPUT_FILE="response.out"
 
 # Check if songs provided
