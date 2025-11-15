@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'training-service/**'
+      - 'training-job/**'
       - '.github/workflows/build-push-training-job.yml'
 
 permissions:
@@ -60,9 +60,10 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          cd training-service
-          docker build -t caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.NEW_VERSION }} .
-          docker push caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.NEW_VERSION }}
+          cd training-job
+          docker build -t caiosgrossi/playlist-recommender-system:training-job-v${{ steps.version.outputs.NEW_VERSION }} .
+          docker push caiosgrossi/playlist-recommender-system:training-job-v${{ steps.version.outputs.NEW_VERSION }}
+          echo "Pushed image: training-job-v${{ steps.version.outputs.NEW_VERSION }}"
 
       - name: Update ConfigMap version
         run: |
@@ -72,10 +73,10 @@ jobs:
       - name: Update Job manifest
         run: |
           # Update image tag
-          sed -i "s|image: caiosgrossi/playlist-recommender-system:training-service-v[0-9.]*|image: caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.NEW_VERSION }}|g" k8s/job-training.yaml
+          sed -i "s|image: caiosgrossi/playlist-recommender-system:training-job-v[0-9.]*|image: caiosgrossi/playlist-recommender-system:training-job-v${{ steps.version.outputs.NEW_VERSION }}|g" k8s/job-training.yaml
           
           # Update Job name
-          sed -i "s|name: training-job-v[0-9.-]*|name: training-job-v${{ steps.version.outputs.VERSION_SLUG }}|" k8s/job-training.yaml
+          sed -i "s|name: training-job-v[0-9-]*|name: training-job-v${{ steps.version.outputs.VERSION_SLUG }}|" k8s/job-training.yaml
           
           # Update version label
           sed -i "s|version: \"[^\"]*\"|version: \"${{ steps.version.outputs.NEW_VERSION }}\"|" k8s/job-training.yaml
@@ -101,10 +102,10 @@ jobs:
           
           git commit -m "build: Update training Job to v${{ steps.version.outputs.NEW_VERSION }}
 
-          - Docker image: training-service-v${{ steps.version.outputs.NEW_VERSION }}
+          - Docker image: training-job-v${{ steps.version.outputs.NEW_VERSION }}
           - Job name: training-job-v${{ steps.version.outputs.VERSION_SLUG }}
           - ConfigMap version: ${{ steps.version.outputs.NEW_VERSION }}
-          - Trigger: training-service code changes"
+          - Trigger: training-job code changes"
           
           git pull --rebase origin main
           git push

@@ -86,7 +86,7 @@ jobs:
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
           
-          git add k8s/configmap-dataset.yaml k8s/job-training.yaml datasets/dataset-url.txt
+          git add k8s/configmap-dataset.yaml k8s/job-training.yaml
           
           if git diff --staged --quiet; then
             echo "No changes to commit"
@@ -111,4 +111,3 @@ jobs:
           echo "Version: ${{ steps.version.outputs.NEW_VERSION }}"
           echo "Job Name: training-job-v${{ steps.version.outputs.VERSION_SLUG }}"
           echo "ArgoCD will sync and create new Job automatically"
-          echo "ArgoCD will automatically sync and create new training Job"
