@@ -1,0 +1,87 @@
+name: Update Dataset Configuration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'datasets/dataset-url.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  update-config:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Read dataset URL
+        id: dataset
+        run: |
+          DATASET_URL=$(grep -v '^#' datasets/dataset-url.txt | grep -v '^$' | head -n 1 | xargs)
+          echo "DATASET_URL=$DATASET_URL" >> $GITHUB_OUTPUT
+          echo "Dataset URL: $DATASET_URL"
+
+      - name: Increment version
+        id: version
+        run: |
+          CURRENT_VERSION=$(grep 'dataset.version:' k8s/configmap-dataset.yaml | awk '{print $2}' | tr -d '"')
+          echo "Current version: $CURRENT_VERSION"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          PATCH=$((PATCH + 1))
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          VERSION_SLUG=$(echo "$NEW_VERSION" | tr '.' '-')
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION_SLUG=$VERSION_SLUG" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+          echo "Version slug: $VERSION_SLUG"
+
+      - name: Update ConfigMap
+        run: |
+          sed -i "s|dataset.url:.*|dataset.url: \"${{ steps.dataset.outputs.DATASET_URL }}\"|" k8s/configmap-dataset.yaml
+          sed -i "s|dataset.version:.*|dataset.version: \"${{ steps.version.outputs.NEW_VERSION }}\"|" k8s/configmap-dataset.yaml
+          echo "ConfigMap updated"
+
+      - name: Update Job name and version
+        run: |
+          sed -i "s|name: training-job-v[0-9-]*|name: training-job-v${{ steps.version.outputs.VERSION_SLUG }}|" k8s/job-training.yaml
+          sed -i "s|version: \"[0-9.]*\"|version: \"${{ steps.version.outputs.NEW_VERSION }}\"|" k8s/job-training.yaml
+          echo "Job manifest updated"
+
+      - name: Verify changes
+        run: |
+          echo "=== ConfigMap Changes ==="
+          grep -A 2 "dataset.url:" k8s/configmap-dataset.yaml
+          grep "dataset.version:" k8s/configmap-dataset.yaml
+          echo ""
+          echo "=== Job Changes ==="
+          grep "name: training-job" k8s/job-training.yaml
+          grep "version:" k8s/job-training.yaml | head -n 1
+
+      - name: Commit changes
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+          git add k8s/configmap-dataset.yaml k8s/job-training.yaml
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update dataset config to version ${{ steps.version.outputs.NEW_VERSION }}"
+            git pull --rebase origin main
+            git push
+            echo "Changes committed and pushed"
+          fi
+
+      - name: Workflow summary
+        run: |
+          echo "Dataset Configuration Update Complete"
+          echo "Dataset URL: ${{ steps.dataset.outputs.DATASET_URL }}"
+          echo "New Version: ${{ steps.version.outputs.NEW_VERSION }}"
+          echo "Job Name: training-job-v${{ steps.version.outputs.VERSION_SLUG }}"
+          echo "ArgoCD will automatically sync and create new training Job"

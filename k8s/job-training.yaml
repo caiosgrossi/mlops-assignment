@@ -1,27 +1,26 @@
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: batch/v1
+kind: Job
 metadata:
-  name: playlist-recommender-system-trainer-ds1-0-0
+  name: training-job-v1-0-1
   namespace: caiogrossi
+  labels:
+    app: caiogrossi-recommender-trainer
+    version: "1.0.1"
+    managed-by: argocd
 spec:
-  replicas: 1
-  strategy:
-    type: Recreate
-  selector:
-    matchLabels:
-      app: caiogrossi-recommender-trainer
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 2
   template:
     metadata:
       labels:
         app: caiogrossi-recommender-trainer
     spec:
+      restartPolicy: OnFailure
       containers:
-      - name: playlist-recommender-trainer
+      - name: training-job
         image: caiosgrossi/playlist-recommender-system:training-service-v1.0.2
         imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 50005
         env:
         - name: DATASET_URL
           valueFrom:
@@ -42,18 +41,6 @@ spec:
         - name: model-storage
           mountPath: /app/models
           subPath: dev
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 50005
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 50005
-          initialDelaySeconds: 10
-          periodSeconds: 5
         resources:
           requests:
             memory: "512Mi"

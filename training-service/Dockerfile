@@ -10,18 +10,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar código da aplicação
-COPY app.py .
+# Copiar código da aplicação (standalone training script)
+COPY train_job.py .
 
 # Criar diretório para modelos
 RUN mkdir -p /app/models
 
-# Expor porta
-EXPOSE 50005
-
 # Variáveis de ambiente
-ENV FLASK_APP=app.py
 ENV PYTHONUNBUFFERED=1
 
-# Comando para rodar com Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:50005", "--workers", "2", "--timeout", "600", "app:app"]
+# Comando para rodar training script
+CMD ["python", "train_job.py"]
