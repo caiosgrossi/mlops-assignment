@@ -25,4 +25,5 @@ docker run --rm \
 Notes
 - In-cluster usage is preferred: the Kubernetes `job-training.yaml` manifest runs the same image with env vars from the dataset ConfigMap and mounts the PVC at `/app/models`.
 - The job writes models and `metadata.json` to `/app/models` so the API can load the latest model.
+- On the host the PVC backing `/app/models` maps to `/home/caiogrossi/project2-pv/production`; both model artifacts and the `metadata.json` file are stored there.
 - The repository's workflows automate building and tagging images; ArgoCD performs the sync when manifests are updated.

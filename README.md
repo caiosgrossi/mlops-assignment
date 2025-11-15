@@ -45,6 +45,9 @@ docker run --rm -v /path/to/models:/app/models \
   training-job:latest python train_job.py
 ```
 
+Models location
+- In the cluster the PVC mounted at `/app/models` is backed by the host path `/home/caiogrossi/project2-pv/production`. Model artifacts and `metadata.json` are written to that location and are available to the API via the mount.
+
 Where to look
 - Kubernetes manifests: `project-delivery/kubernetes/` (also `k8s/` for the working manifests)
 - ArgoCD manifests: `manifest/manifest-argoapp.yaml`, `manifest/manifest-argosystem.yaml`

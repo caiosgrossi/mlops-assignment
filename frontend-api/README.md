@@ -9,7 +9,7 @@ This service reads pre-trained models from a shared directory and returns song r
 ## Architecture
 
 - **Port:** 50005
-- **Models Directory:** `/app/models` (mounted from `/home/caiogrossi/project2-pv/models`)
+-- **Models Directory:** `/app/models` (mounted from the host path `/home/caiogrossi/project2-pv/production`)
 - **Access:** Read-only access to models
 # Music Recommendation Service (brief)
 
@@ -26,6 +26,7 @@ Quick usage
 
 Models
 - Models and `metadata.json` live in `/app/models` inside the container (mount a PVC or a host path to this location).
+- On the host the PVC is backed by `/home/caiogrossi/project2-pv/production`; model artifacts and `metadata.json` are stored there.
 
 Build and run (local, succinct)
 1. Build API image:
