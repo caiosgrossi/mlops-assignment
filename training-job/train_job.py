@@ -366,7 +366,7 @@ def train_and_save_model():
         
         # Step 3: Save model
         logger.info("Step 3/3: Saving model to persistent storage...")
-        model_manager = ModelManager(models_dir='/app/models/dev')
+        model_manager = ModelManager(models_dir='/app/models')
         model_path, version, timestamp = model_manager.save_model(
             results,
             results['num_rules'],
