@@ -25,7 +25,7 @@ spec:
         volumeMounts:
         - name: model-storage
           mountPath: /app/models
-          subPath: dev
+          subPath: production
           readOnly: true
         livenessProbe:
           httpGet:

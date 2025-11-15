@@ -40,7 +40,7 @@ spec:
         volumeMounts:
         - name: model-storage
           mountPath: /app/models
-          subPath: dev
+          subPath: production
         resources:
           requests:
             memory: "512Mi"
