@@ -1,0 +1,193 @@
+metadata:
+  creationTimestamp: "2025-11-14T21:58:22Z"
+  deletionGracePeriodSeconds: 0
+  deletionTimestamp: "2025-11-14T22:03:44Z"
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+  generation: 289
+  managedFields:
+  - apiVersion: argoproj.io/v1alpha1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:finalizers:
+          .: {}
+          v:"resources-finalizer.argocd.argoproj.io": {}
+      f:spec:
+        .: {}
+        f:destination:
+          .: {}
+          f:namespace: {}
+          f:server: {}
+        f:project: {}
+        f:source:
+          .: {}
+          f:path: {}
+          f:repoURL: {}
+        f:syncPolicy:
+          .: {}
+          f:automated: {}
+      f:status:
+        .: {}
+        f:health: {}
+        f:sourceHydrator: {}
+        f:summary: {}
+        f:sync:
+          .: {}
+          f:comparedTo:
+            .: {}
+            f:destination: {}
+            f:source: {}
+    manager: argocd-server
+    operation: Update
+    time: "2025-11-14T22:03:44Z"
+  - apiVersion: argoproj.io/v1alpha1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:controllerNamespace: {}
+        f:health:
+          f:lastTransitionTime: {}
+          f:status: {}
+        f:history: {}
+        f:operationState:
+          .: {}
+          f:finishedAt: {}
+          f:message: {}
+          f:operation:
+            .: {}
+            f:initiatedBy:
+              .: {}
+              f:automated: {}
+            f:retry:
+              .: {}
+              f:limit: {}
+            f:sync:
+              .: {}
+              f:revision: {}
+          f:phase: {}
+          f:startedAt: {}
+          f:syncResult:
+            .: {}
+            f:resources: {}
+            f:revision: {}
+            f:source:
+              .: {}
+              f:path: {}
+              f:repoURL: {}
+        f:reconciledAt: {}
+        f:resourceHealthSource: {}
+        f:resources: {}
+        f:sourceType: {}
+        f:sync:
+          f:comparedTo:
+            f:destination:
+              f:namespace: {}
+              f:server: {}
+            f:source:
+              f:path: {}
+              f:repoURL: {}
+          f:revision: {}
+          f:status: {}
+    manager: argocd-application-controller
+    operation: Update
+    time: "2025-11-15T02:02:35Z"
+  name: playlist-recommender-apps
+  namespace: argocd
+  resourceVersion: "19021709"
+  uid: a84f0f01-41e0-4416-82b5-42fc0089eb45
+spec:
+  destination:
+    namespace: caiogrossi
+    server: https://kubernetes.default.svc
+  project: caiogrossi-project
+  source:
+    path: argocd
+    repoURL: https://github.com/caiosgrossi/mlops-assignment.git
+  syncPolicy:
+    automated: {}
+status:
+  controllerNamespace: argocd
+  health:
+    lastTransitionTime: "2025-11-14T22:03:44Z"
+    status: Progressing
+  history:
+  - deployStartedAt: "2025-11-14T22:03:33Z"
+    deployedAt: "2025-11-14T22:03:33Z"
+    id: 0
+    initiatedBy:
+      automated: true
+    revision: 489be2bf8e52f0cd089f6bf6386b3b6c3b8ce0c2
+    source:
+      path: argocd
+      repoURL: https://github.com/caiosgrossi/mlops-assignment.git
+  operationState:
+    finishedAt: "2025-11-14T22:03:33Z"
+    message: successfully synced (all tasks run)
+    operation:
+      initiatedBy:
+        automated: true
+      retry:
+        limit: 5
+      sync:
+        revision: 489be2bf8e52f0cd089f6bf6386b3b6c3b8ce0c2
+    phase: Succeeded
+    startedAt: "2025-11-14T22:03:33Z"
+    syncResult:
+      resources:
+      - group: argoproj.io
+        hookPhase: Running
+        kind: Application
+        message: application.argoproj.io/playlist-recommender-system created
+        name: playlist-recommender-system
+        namespace: caiogrossi
+        status: Synced
+        syncPhase: Sync
+        version: v1alpha1
+      - group: argoproj.io
+        hookPhase: Running
+        kind: Application
+        message: application.argoproj.io/playlist-recommender-apps created
+        name: playlist-recommender-apps
+        namespace: caiogrossi
+        status: Synced
+        syncPhase: Sync
+        version: v1alpha1
+      revision: 489be2bf8e52f0cd089f6bf6386b3b6c3b8ce0c2
+      source:
+        path: argocd
+        repoURL: https://github.com/caiosgrossi/mlops-assignment.git
+  reconciledAt: "2025-11-15T02:02:35Z"
+  resourceHealthSource: appTree
+  resources:
+  - group: argoproj.io
+    health:
+      message: Pending deletion
+      status: Progressing
+    kind: Application
+    name: playlist-recommender-apps
+    namespace: caiogrossi
+    status: Synced
+    version: v1alpha1
+  - group: argoproj.io
+    health:
+      message: Pending deletion
+      status: Progressing
+    kind: Application
+    name: playlist-recommender-system
+    namespace: caiogrossi
+    status: Synced
+    version: v1alpha1
+  sourceHydrator: {}
+  sourceType: Directory
+  summary: {}
+  sync:
+    comparedTo:
+      destination:
+        namespace: caiogrossi
+        server: https://kubernetes.default.svc
+      source:
+        path: argocd
+        repoURL: https://github.com/caiosgrossi/mlops-assignment.git
+    revision: 4c6f73a2cec356cf7bb4619d12fba3e1007ed85b
+    status: Synced

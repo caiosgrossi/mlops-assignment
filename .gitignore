@@ -12,6 +12,4 @@ tests/test_venv/
 **/env/
 
 response.out
-manifest-argoapp.yaml
 .gitignore
-manifest-argosystem.yaml

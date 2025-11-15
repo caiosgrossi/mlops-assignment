@@ -1,0 +1,319 @@
+metadata:
+  creationTimestamp: "2025-11-14T22:05:32Z"
+  generation: 467
+  managedFields:
+  - apiVersion: argoproj.io/v1alpha1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:spec:
+        .: {}
+        f:destination:
+          .: {}
+          f:namespace: {}
+          f:server: {}
+        f:project: {}
+        f:source:
+          .: {}
+          f:path: {}
+          f:repoURL: {}
+        f:syncPolicy:
+          .: {}
+          f:automated: {}
+      f:status:
+        .: {}
+        f:health: {}
+        f:sourceHydrator: {}
+        f:summary: {}
+        f:sync:
+          .: {}
+          f:comparedTo:
+            .: {}
+            f:destination: {}
+            f:source: {}
+    manager: argocd-server
+    operation: Update
+    time: "2025-11-15T00:40:19Z"
+  - apiVersion: argoproj.io/v1alpha1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:controllerNamespace: {}
+        f:health:
+          f:lastTransitionTime: {}
+          f:status: {}
+        f:history: {}
+        f:operationState:
+          .: {}
+          f:finishedAt: {}
+          f:message: {}
+          f:operation:
+            .: {}
+            f:initiatedBy:
+              .: {}
+              f:automated: {}
+            f:retry:
+              .: {}
+              f:limit: {}
+            f:sync:
+              .: {}
+              f:revision: {}
+          f:phase: {}
+          f:startedAt: {}
+          f:syncResult:
+            .: {}
+            f:resources: {}
+            f:revision: {}
+            f:source:
+              .: {}
+              f:path: {}
+              f:repoURL: {}
+        f:reconciledAt: {}
+        f:resourceHealthSource: {}
+        f:resources: {}
+        f:sourceType: {}
+        f:summary:
+          f:images: {}
+        f:sync:
+          f:comparedTo:
+            f:destination:
+              f:namespace: {}
+              f:server: {}
+            f:source:
+              f:path: {}
+              f:repoURL: {}
+          f:revision: {}
+          f:status: {}
+    manager: argocd-application-controller
+    operation: Update
+    time: "2025-11-15T02:02:14Z"
+  name: playlist-recommender-system
+  namespace: argocd
+  resourceVersion: "19021590"
+  uid: 34668c7a-78e6-4063-acdc-d264cfdbad92
+spec:
+  destination:
+    namespace: caiogrossi
+    server: https://kubernetes.default.svc
+  project: caiogrossi-project
+  source:
+    path: k8s
+    repoURL: https://github.com/caiosgrossi/mlops-assignment.git
+  syncPolicy:
+    automated: {}
+status:
+  controllerNamespace: argocd
+  health:
+    lastTransitionTime: "2025-11-15T01:56:50Z"
+    status: Healthy
+  history:
+  - deployStartedAt: "2025-11-14T23:04:43Z"
+    deployedAt: "2025-11-14T23:04:44Z"
+    id: 11
+    initiatedBy:
+      automated: true
+    revision: 493fbdb3d4c38658de59c3fc3606632ccdb5613a
+    source:
+      path: k8s
+      repoURL: https://github.com/caiosgrossi/mlops-assignment.git
+  - deployStartedAt: "2025-11-14T23:32:16Z"
+    deployedAt: "2025-11-14T23:32:17Z"
+    id: 12
+    initiatedBy:
+      automated: true
+    revision: 8fecaaf629f5f411638a1df04d9e70a46c8f5d09
+    source:
+      path: k8s
+      repoURL: https://github.com/caiosgrossi/mlops-assignment.git
+  - deployStartedAt: "2025-11-15T00:39:56Z"
+    deployedAt: "2025-11-15T00:39:57Z"
+    id: 13
+    initiatedBy:
+      automated: true
+    revision: 8cc1640ad3c1d2ab86756016924833858a1bc80c
+    source:
+      path: k8s
+      repoURL: https://github.com/caiosgrossi/mlops-assignment.git
+  - deployStartedAt: "2025-11-15T01:02:24Z"
+    deployedAt: "2025-11-15T01:02:25Z"
+    id: 14
+    initiatedBy:
+      automated: true
+    revision: de1cd27dde6a77bd4ee1a3340e40693c1c348191
+    source:
+      path: k8s
+      repoURL: https://github.com/caiosgrossi/mlops-assignment.git
+  - deployStartedAt: "2025-11-15T01:12:45Z"
+    deployedAt: "2025-11-15T01:12:45Z"
+    id: 15
+    initiatedBy:
+      automated: true
+    revision: 7606c6719882de91e89e5f1f3484e4cb39dfc911
+    source:
+      path: k8s
+      repoURL: https://github.com/caiosgrossi/mlops-assignment.git
+  - deployStartedAt: "2025-11-15T01:27:10Z"
+    deployedAt: "2025-11-15T01:27:11Z"
+    id: 16
+    initiatedBy:
+      automated: true
+    revision: 2a0578a618c45729dfbb0a2ae794b3885791ce6c
+    source:
+      path: k8s
+      repoURL: https://github.com/caiosgrossi/mlops-assignment.git
+  - deployStartedAt: "2025-11-15T01:28:20Z"
+    deployedAt: "2025-11-15T01:28:21Z"
+    id: 17
+    initiatedBy:
+      automated: true
+    revision: d3d041056de51a1247390ad197c02b22920f506b
+    source:
+      path: k8s
+      repoURL: https://github.com/caiosgrossi/mlops-assignment.git
+  - deployStartedAt: "2025-11-15T01:37:32Z"
+    deployedAt: "2025-11-15T01:37:32Z"
+    id: 18
+    initiatedBy:
+      automated: true
+    revision: e348e944109d37a08ce04f186ef300bbc7729a3a
+    source:
+      path: k8s
+      repoURL: https://github.com/caiosgrossi/mlops-assignment.git
+  - deployStartedAt: "2025-11-15T01:39:56Z"
+    deployedAt: "2025-11-15T01:39:57Z"
+    id: 19
+    initiatedBy:
+      automated: true
+    revision: 6672f747b43ea464bcacf8ab77962b10a5d70706
+    source:
+      path: k8s
+      repoURL: https://github.com/caiosgrossi/mlops-assignment.git
+  - deployStartedAt: "2025-11-15T01:56:24Z"
+    deployedAt: "2025-11-15T01:56:25Z"
+    id: 20
+    initiatedBy:
+      automated: true
+    revision: 4c6f73a2cec356cf7bb4619d12fba3e1007ed85b
+    source:
+      path: k8s
+      repoURL: https://github.com/caiosgrossi/mlops-assignment.git
+  operationState:
+    finishedAt: "2025-11-15T01:56:25Z"
+    message: successfully synced (all tasks run)
+    operation:
+      initiatedBy:
+        automated: true
+      retry:
+        limit: 5
+      sync:
+        revision: 4c6f73a2cec356cf7bb4619d12fba3e1007ed85b
+    phase: Succeeded
+    startedAt: "2025-11-15T01:56:24Z"
+    syncResult:
+      resources:
+      - group: ""
+        hookPhase: Running
+        kind: ConfigMap
+        message: configmap/dataset-config configured
+        name: dataset-config
+        namespace: caiogrossi
+        status: Synced
+        syncPhase: Sync
+        version: v1
+      - group: ""
+        hookPhase: Running
+        kind: PersistentVolumeClaim
+        message: persistentvolumeclaim/model-pvc unchanged
+        name: model-pvc
+        namespace: caiogrossi
+        status: Synced
+        syncPhase: Sync
+        version: v1
+      - group: ""
+        hookPhase: Running
+        kind: Service
+        message: service/frontend-api-service unchanged
+        name: frontend-api-service
+        namespace: caiogrossi
+        status: Synced
+        syncPhase: Sync
+        version: v1
+      - group: apps
+        hookPhase: Running
+        images:
+        - caiosgrossi/playlist-recommender-system:frontend-api-v1.0.3
+        kind: Deployment
+        message: deployment.apps/frontend-api unchanged
+        name: frontend-api
+        namespace: caiogrossi
+        status: Synced
+        syncPhase: Sync
+        version: v1
+      - group: batch
+        hookPhase: Running
+        images:
+        - caiosgrossi/playlist-recommender-system:training-job-v3.0.0
+        kind: Job
+        message: job.batch/training-job-v3-0-1 created
+        name: training-job-v3-0-1
+        namespace: caiogrossi
+        status: Synced
+        syncPhase: Sync
+        version: v1
+      revision: 4c6f73a2cec356cf7bb4619d12fba3e1007ed85b
+      source:
+        path: k8s
+        repoURL: https://github.com/caiosgrossi/mlops-assignment.git
+  reconciledAt: "2025-11-15T02:02:14Z"
+  resourceHealthSource: appTree
+  resources:
+  - kind: ConfigMap
+    name: dataset-config
+    namespace: caiogrossi
+    status: Synced
+    version: v1
+  - health:
+      status: Healthy
+    kind: PersistentVolumeClaim
+    name: model-pvc
+    namespace: caiogrossi
+    status: Synced
+    version: v1
+  - health:
+      status: Healthy
+    kind: Service
+    name: frontend-api-service
+    namespace: caiogrossi
+    status: Synced
+    version: v1
+  - group: apps
+    health:
+      status: Healthy
+    kind: Deployment
+    name: frontend-api
+    namespace: caiogrossi
+    status: Synced
+    version: v1
+  - group: batch
+    health:
+      status: Healthy
+    kind: Job
+    name: training-job-v3-0-1
+    namespace: caiogrossi
+    status: Synced
+    version: v1
+  sourceHydrator: {}
+  sourceType: Directory
+  summary:
+    images:
+    - caiosgrossi/playlist-recommender-system:frontend-api-v1.0.3
+    - caiosgrossi/playlist-recommender-system:training-job-v3.0.0
+  sync:
+    comparedTo:
+      destination:
+        namespace: caiogrossi
+        server: https://kubernetes.default.svc
+      source:
+        path: k8s
+        repoURL: https://github.com/caiosgrossi/mlops-assignment.git
+    revision: 4c6f73a2cec356cf7bb4619d12fba3e1007ed85b
+    status: Synced
