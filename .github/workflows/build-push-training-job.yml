@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'training-service/**'
+      - 'training-job/**'
       - '.github/workflows/build-push-training-job.yml'
 
 permissions:
@@ -25,7 +25,7 @@ jobs:
         id: version
         run: |
           # Extract current version from manifest, handle both versioned tags and :latest
-          IMAGE_TAG=$(grep "image: caiosgrossi/playlist-recommender-system:training-service-" k8s/job-training.yaml | sed 's/.*training-service-//' | sed 's/".*//; s/ .*//')
+          IMAGE_TAG=$(grep "image: caiosgrossi/playlist-recommender-system:training-job-" k8s/job-training.yaml | sed 's/.*training-job-//' | sed 's/".*//; s/ .*//')
           
           # If tag is 'latest' or doesn't match vX.Y.Z pattern, start at 1.0.0
           if [[ "$IMAGE_TAG" == "latest" ]] || [[ ! "$IMAGE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -40,7 +40,7 @@ jobs:
           fi
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Current tag: $IMAGE_TAG"
-          echo "Building version: training-service-v$VERSION"
+          echo "Building version: training-job-v$VERSION"
 
       - name: Login to DockerHub
         uses: docker/login-action@v2
@@ -50,21 +50,21 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.VERSION }} \
-                       training-service/
+          docker build -t caiosgrossi/playlist-recommender-system:training-job-v${{ steps.version.outputs.VERSION }} \
+                       training-job/
 
       - name: Push Docker image
         run: |
-          docker push caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.VERSION }}
+          docker push caiosgrossi/playlist-recommender-system:training-job-v${{ steps.version.outputs.VERSION }}
 
       - name: Update Kubernetes manifest
         run: |
           # Update image tag in Job manifest, handling any existing tag format
-          sed -i "s|image: caiosgrossi/playlist-recommender-system:training-service-[^[:space:]]*|image: caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.VERSION }}|g" k8s/job-training.yaml
+          sed -i "s|image: caiosgrossi/playlist-recommender-system:training-job-[^[:space:]]*|image: caiosgrossi/playlist-recommender-system:training-job-v${{ steps.version.outputs.VERSION }}|g" k8s/job-training.yaml
           
           # Verify the update
           echo "Updated manifest:"
-          grep "image: caiosgrossi/playlist-recommender-system:training-service-" k8s/job-training.yaml
+          grep "image: caiosgrossi/playlist-recommender-system:training-job-" k8s/job-training.yaml
 
       - name: Commit and push manifest change
         run: |
@@ -83,6 +83,6 @@ jobs:
       - name: Workflow summary
         run: |
           echo "ML Training Job Build Complete"
-          echo "Image: caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.VERSION }}"
+          echo "Image: caiosgrossi/playlist-recommender-system:training-job-v${{ steps.version.outputs.VERSION }}"
           echo "Manifest: k8s/job-training.yaml updated"
           echo "ArgoCD will automatically deploy this version"
