@@ -1,11 +1,11 @@
-name: Build and Push ML Service
+name: Build and Push Training Job
 
 on:
   push:
     branches: [main]
     paths:
       - 'training-service/**'
-      - '.github/workflows/build-push-ml-service.yml'
+      - '.github/workflows/build-push-training-job.yml'
 
 permissions:
   contents: write
@@ -25,7 +25,7 @@ jobs:
         id: version
         run: |
           # Extract current version from manifest, handle both versioned tags and :latest
-          IMAGE_TAG=$(grep "image: caiosgrossi/playlist-recommender-system:training-service-" k8s/deployment-training.yaml | sed 's/.*training-service-//' | sed 's/".*//; s/ .*//')
+          IMAGE_TAG=$(grep "image: caiosgrossi/playlist-recommender-system:training-service-" k8s/job-training.yaml | sed 's/.*training-service-//' | sed 's/".*//; s/ .*//')
           
           # If tag is 'latest' or doesn't match vX.Y.Z pattern, start at 1.0.0
           if [[ "$IMAGE_TAG" == "latest" ]] || [[ ! "$IMAGE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -59,23 +59,23 @@ jobs:
 
       - name: Update Kubernetes manifest
         run: |
-          # Update image tag in deployment manifest, handling any existing tag format
-          sed -i "s|image: caiosgrossi/playlist-recommender-system:training-service-[^[:space:]]*|image: caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.VERSION }}|g" k8s/deployment-training.yaml
+          # Update image tag in Job manifest, handling any existing tag format
+          sed -i "s|image: caiosgrossi/playlist-recommender-system:training-service-[^[:space:]]*|image: caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.VERSION }}|g" k8s/job-training.yaml
           
           # Verify the update
           echo "Updated manifest:"
-          grep "image: caiosgrossi/playlist-recommender-system:training-service-" k8s/deployment-training.yaml
+          grep "image: caiosgrossi/playlist-recommender-system:training-service-" k8s/job-training.yaml
 
       - name: Commit and push manifest change
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
-          git add k8s/deployment-training.yaml
+          git add k8s/job-training.yaml
           
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Update ML training job to version v${{ steps.version.outputs.VERSION }}"
+            git commit -m "Update training Job image to version v${{ steps.version.outputs.VERSION }}"
             git pull --rebase origin main
             git push
           fi
@@ -84,5 +84,5 @@ jobs:
         run: |
           echo "ML Training Job Build Complete"
           echo "Image: caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.VERSION }}"
-          echo "Manifest: k8s/deployment-training.yaml updated"
+          echo "Manifest: k8s/job-training.yaml updated"
           echo "ArgoCD will automatically deploy this version"
