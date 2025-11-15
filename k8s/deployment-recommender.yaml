@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: playlist-recommender-system
+  name: frontend-api
   namespace: caiogrossi
 spec:
   replicas: 1
@@ -10,15 +10,15 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: caiogrossi-recommender
+      app: caiogrossi-frontend-api
   template:
     metadata:
       labels:
-        app: caiogrossi-recommender
+        app: caiogrossi-frontend-api
     spec:
       containers:
-      - name: playlist-recommender
-        image: caiosgrossi/playlist-recommender-system:recommendation-service-v1.0.2
+      - name: frontend-api
+        image: caiosgrossi/playlist-recommender-system:frontend-api-v1.0.2
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 50005

@@ -1,10 +1,10 @@
-name: Build and Push Recommendation API
+name: Build and Push Frontend API
 
 on:
   push:
     branches: [main]
     paths:
-      - 'recommendation-service/**'
+      - 'frontend-api/**'
       - '.github/workflows/build-push-recommendation-api.yml'
 
 permissions:
@@ -25,7 +25,7 @@ jobs:
         id: version
         run: |
           # Extract current version from manifest, handle both versioned tags and :latest
-          IMAGE_TAG=$(grep "image: caiosgrossi/playlist-recommender-system:recommendation-service-" k8s/deployment-recommender.yaml | sed 's/.*recommendation-service-//' | sed 's/".*//; s/ .*//')
+          IMAGE_TAG=$(grep "image: caiosgrossi/playlist-recommender-system:frontend-api-" k8s/deployment-recommender.yaml | sed 's/.*frontend-api-//' | sed 's/".*//; s/ .*//')
           
           # If tag is 'latest' or doesn't match vX.Y.Z pattern, start at 1.0.0
           if [[ "$IMAGE_TAG" == "latest" ]] || [[ ! "$IMAGE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -40,7 +40,7 @@ jobs:
           fi
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Current tag: $IMAGE_TAG"
-          echo "Building version: recommendation-service-v$VERSION"
+          echo "Building version: frontend-api-v$VERSION"
 
       - name: Login to DockerHub
         uses: docker/login-action@v2
@@ -50,21 +50,21 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t caiosgrossi/playlist-recommender-system:recommendation-service-v${{ steps.version.outputs.VERSION }} \
-                       recommendation-service/
+          docker build -t caiosgrossi/playlist-recommender-system:frontend-api-v${{ steps.version.outputs.VERSION }} \
+                       frontend-api/
 
       - name: Push Docker image
         run: |
-          docker push caiosgrossi/playlist-recommender-system:recommendation-service-v${{ steps.version.outputs.VERSION }}
+          docker push caiosgrossi/playlist-recommender-system:frontend-api-v${{ steps.version.outputs.VERSION }}
 
       - name: Update Kubernetes manifest
         run: |
           # Update image tag in deployment manifest, handling any existing tag format
-          sed -i "s|image: caiosgrossi/playlist-recommender-system:recommendation-service-[^[:space:]]*|image: caiosgrossi/playlist-recommender-system:recommendation-service-v${{ steps.version.outputs.VERSION }}|g" k8s/deployment-recommender.yaml
+          sed -i "s|image: caiosgrossi/playlist-recommender-system:frontend-api-[^[:space:]]*|image: caiosgrossi/playlist-recommender-system:frontend-api-v${{ steps.version.outputs.VERSION }}|g" k8s/deployment-recommender.yaml
           
           # Verify the update
           echo "Updated manifest:"
-          grep "image: caiosgrossi/playlist-recommender-system:recommendation-service-" k8s/deployment-recommender.yaml
+          grep "image: caiosgrossi/playlist-recommender-system:frontend-api-" k8s/deployment-recommender.yaml
 
       - name: Commit and push manifest change
         run: |
@@ -75,14 +75,14 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Update Recommendation API to version v${{ steps.version.outputs.VERSION }}"
+            git commit -m "Update Frontend API to version v${{ steps.version.outputs.VERSION }}"
             git pull --rebase origin main
             git push
           fi
 
       - name: Workflow summary
         run: |
-          echo "Recommendation API Build Complete"
-          echo "Image: caiosgrossi/playlist-recommender-system:recommendation-service-v${{ steps.version.outputs.VERSION }}"
+          echo "Frontend API Build Complete"
+          echo "Image: caiosgrossi/playlist-recommender-system:frontend-api-v${{ steps.version.outputs.VERSION }}"
           echo "Manifest: k8s/deployment-recommender.yaml updated"
           echo "ArgoCD will automatically deploy this version"
