@@ -27,52 +27,77 @@ jobs:
           echo "DATASET_URL=$DATASET_URL" >> $GITHUB_OUTPUT
           echo "Dataset URL: $DATASET_URL"
 
-      - name: Increment version
+      - name: Get and increment version from ConfigMap
         id: version
         run: |
+          # Read current version from ConfigMap (format: X.Y.Z)
           CURRENT_VERSION=$(grep 'dataset.version:' k8s/configmap-dataset.yaml | awk '{print $2}' | tr -d '"')
           echo "Current version: $CURRENT_VERSION"
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          
+          # Parse version
+          if [[ $CURRENT_VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            MAJOR="${BASH_REMATCH[1]}"
+            MINOR="${BASH_REMATCH[2]}"
+            PATCH="${BASH_REMATCH[3]}"
+          else
+            echo "Invalid version format, defaulting to 1.0.0"
+            MAJOR=1
+            MINOR=0
+            PATCH=0
+          fi
+          
+          # Increment PATCH for dataset changes
           PATCH=$((PATCH + 1))
           NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
           VERSION_SLUG=$(echo "$NEW_VERSION" | tr '.' '-')
+          
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "VERSION_SLUG=$VERSION_SLUG" >> $GITHUB_OUTPUT
-          echo "New version: $NEW_VERSION"
-          echo "Version slug: $VERSION_SLUG"
+          echo "New version: $NEW_VERSION (slug: $VERSION_SLUG)"
 
       - name: Update ConfigMap
         run: |
-          sed -i "s|dataset.url:.*|dataset.url: \"${{ steps.dataset.outputs.DATASET_URL }}\"|" k8s/configmap-dataset.yaml
-          sed -i "s|dataset.version:.*|dataset.version: \"${{ steps.version.outputs.NEW_VERSION }}\"|" k8s/configmap-dataset.yaml
+          sed -i "s|dataset.url: \"[^\"]*\"|dataset.url: \"${{ steps.dataset.outputs.DATASET_URL }}\"|" k8s/configmap-dataset.yaml
+          sed -i "s|dataset.version: \"[^\"]*\"|dataset.version: \"${{ steps.version.outputs.NEW_VERSION }}\"|" k8s/configmap-dataset.yaml
           echo "ConfigMap updated"
 
-      - name: Update Job name and version
+      - name: Update Job name
         run: |
+          # Update Job name (keep same image, just new Job instance)
           sed -i "s|name: training-job-v[0-9-]*|name: training-job-v${{ steps.version.outputs.VERSION_SLUG }}|" k8s/job-training.yaml
-          sed -i "s|version: \"[0-9.]*\"|version: \"${{ steps.version.outputs.NEW_VERSION }}\"|" k8s/job-training.yaml
-          echo "Job manifest updated"
+          
+          # Update version label
+          sed -i "s|version: \"[^\"]*\"|version: \"${{ steps.version.outputs.NEW_VERSION }}\"|" k8s/job-training.yaml
+          
+          echo "Job manifest updated (image unchanged, new Job instance)"
 
       - name: Verify changes
         run: |
           echo "=== ConfigMap Changes ==="
-          grep -A 2 "dataset.url:" k8s/configmap-dataset.yaml
+          grep "dataset.url:" k8s/configmap-dataset.yaml
           grep "dataset.version:" k8s/configmap-dataset.yaml
           echo ""
           echo "=== Job Changes ==="
           grep "name: training-job" k8s/job-training.yaml
-          grep "version:" k8s/job-training.yaml | head -n 1
+          grep "version:" k8s/job-training.yaml | head -1
 
       - name: Commit changes
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
-          git add k8s/configmap-dataset.yaml k8s/job-training.yaml
+          
+          git add k8s/configmap-dataset.yaml k8s/job-training.yaml datasets/dataset-url.txt
           
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Update dataset config to version ${{ steps.version.outputs.NEW_VERSION }}"
+            git commit -m "chore: Update dataset config to v${{ steps.version.outputs.NEW_VERSION }}
+            
+            - Dataset URL: ${{ steps.dataset.outputs.DATASET_URL }}
+            - Version: ${{ steps.version.outputs.NEW_VERSION }}
+            - Job name: training-job-v${{ steps.version.outputs.VERSION_SLUG }}
+            - Image unchanged (same training code, new dataset)"
+            
             git pull --rebase origin main
             git push
             echo "Changes committed and pushed"
@@ -81,7 +106,9 @@ jobs:
       - name: Workflow summary
         run: |
           echo "Dataset Configuration Update Complete"
+          echo "===================================="
           echo "Dataset URL: ${{ steps.dataset.outputs.DATASET_URL }}"
-          echo "New Version: ${{ steps.version.outputs.NEW_VERSION }}"
+          echo "Version: ${{ steps.version.outputs.NEW_VERSION }}"
           echo "Job Name: training-job-v${{ steps.version.outputs.VERSION_SLUG }}"
+          echo "ArgoCD will sync and create new Job automatically"
           echo "ArgoCD will automatically sync and create new training Job"

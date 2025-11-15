@@ -1,17 +1,18 @@
+# .github/workflows/build-push-training-job.yml
 name: Build and Push Training Job
 
 on:
   push:
     branches: [main]
     paths:
-      - 'training-job/**'
+      - 'training-service/**'
       - '.github/workflows/build-push-training-job.yml'
 
 permissions:
   contents: write
 
 jobs:
-  build-and-deploy-training:
+  build-and-push:
     runs-on: ubuntu-latest
     
     steps:
@@ -21,68 +22,89 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Set version tag
+      - name: Get and increment version from ConfigMap
         id: version
         run: |
-          # Extract current version from manifest, handle both versioned tags and :latest
-          IMAGE_TAG=$(grep "image: caiosgrossi/playlist-recommender-system:training-job-" k8s/job-training.yaml | sed 's/.*training-job-//' | sed 's/".*//; s/ .*//')
+          # Read current version from ConfigMap (format: X.Y.Z)
+          CURRENT_VERSION=$(grep 'dataset.version:' k8s/configmap-dataset.yaml | awk '{print $2}' | tr -d '"')
+          echo "Current version: $CURRENT_VERSION"
           
-          # If tag is 'latest' or doesn't match vX.Y.Z pattern, start at 1.0.0
-          if [[ "$IMAGE_TAG" == "latest" ]] || [[ ! "$IMAGE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            VERSION="1.0.0"
+          # Parse version
+          if [[ $CURRENT_VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            MAJOR="${BASH_REMATCH[1]}"
+            MINOR="${BASH_REMATCH[2]}"
+            PATCH="${BASH_REMATCH[3]}"
           else
-            # Extract version number (remove 'v' prefix if present)
-            CURRENT_VERSION=$(echo "$IMAGE_TAG" | sed 's/^v//')
-            # Split version into major.minor.patch
-            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
-            PATCH=$((PATCH + 1))
-            VERSION="${MAJOR}.${MINOR}.${PATCH}"
+            echo "Invalid version format, defaulting to 1.0.0"
+            MAJOR=1
+            MINOR=0
+            PATCH=0
           fi
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "Current tag: $IMAGE_TAG"
-          echo "Building version: training-job-v$VERSION"
+          
+          # Increment MAJOR for code changes, reset MINOR and PATCH
+          MAJOR=$((MAJOR + 1))
+          MINOR=0
+          PATCH=0
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          VERSION_SLUG=$(echo "$NEW_VERSION" | tr '.' '-')
+          
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION_SLUG=$VERSION_SLUG" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION (slug: $VERSION_SLUG)"
 
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build Docker image
+      - name: Build and push Docker image
         run: |
-          docker build -t caiosgrossi/playlist-recommender-system:training-job-v${{ steps.version.outputs.VERSION }} \
-                       training-job/
+          cd training-service
+          docker build -t caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.NEW_VERSION }} .
+          docker push caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.NEW_VERSION }}
 
-      - name: Push Docker image
+      - name: Update ConfigMap version
         run: |
-          docker push caiosgrossi/playlist-recommender-system:training-job-v${{ steps.version.outputs.VERSION }}
+          sed -i "s|dataset.version: \"[^\"]*\"|dataset.version: \"${{ steps.version.outputs.NEW_VERSION }}\"|" k8s/configmap-dataset.yaml
+          echo "ConfigMap version updated to ${{ steps.version.outputs.NEW_VERSION }}"
 
-      - name: Update Kubernetes manifest
+      - name: Update Job manifest
         run: |
-          # Update image tag in Job manifest, handling any existing tag format
-          sed -i "s|image: caiosgrossi/playlist-recommender-system:training-job-[^[:space:]]*|image: caiosgrossi/playlist-recommender-system:training-job-v${{ steps.version.outputs.VERSION }}|g" k8s/job-training.yaml
+          # Update image tag
+          sed -i "s|image: caiosgrossi/playlist-recommender-system:training-service-v[0-9.]*|image: caiosgrossi/playlist-recommender-system:training-service-v${{ steps.version.outputs.NEW_VERSION }}|g" k8s/job-training.yaml
           
-          # Verify the update
-          echo "Updated manifest:"
-          grep "image: caiosgrossi/playlist-recommender-system:training-job-" k8s/job-training.yaml
+          # Update Job name
+          sed -i "s|name: training-job-v[0-9.-]*|name: training-job-v${{ steps.version.outputs.VERSION_SLUG }}|" k8s/job-training.yaml
+          
+          # Update version label
+          sed -i "s|version: \"[^\"]*\"|version: \"${{ steps.version.outputs.NEW_VERSION }}\"|" k8s/job-training.yaml
+          
+          echo "Job manifest updated to v${{ steps.version.outputs.NEW_VERSION }}"
 
-      - name: Commit and push manifest change
+      - name: Verify changes
+        run: |
+          echo "=== ConfigMap Version ==="
+          grep "dataset.version:" k8s/configmap-dataset.yaml
+          echo ""
+          echo "=== Job Manifest ==="
+          grep "name: training-job" k8s/job-training.yaml
+          grep "image: caiosgrossi" k8s/job-training.yaml | grep training
+          grep "version:" k8s/job-training.yaml | head -1
+
+      - name: Commit changes
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
-          git add k8s/job-training.yaml
           
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Update training Job image to version v${{ steps.version.outputs.VERSION }}"
-            git pull --rebase origin main
-            git push
-          fi
+          git add k8s/configmap-dataset.yaml k8s/job-training.yaml
+          
+          git commit -m "build: Update training Job to v${{ steps.version.outputs.NEW_VERSION }}
 
-      - name: Workflow summary
-        run: |
-          echo "ML Training Job Build Complete"
-          echo "Image: caiosgrossi/playlist-recommender-system:training-job-v${{ steps.version.outputs.VERSION }}"
-          echo "Manifest: k8s/job-training.yaml updated"
-          echo "ArgoCD will automatically deploy this version"
+          - Docker image: training-service-v${{ steps.version.outputs.NEW_VERSION }}
+          - Job name: training-job-v${{ steps.version.outputs.VERSION_SLUG }}
+          - ConfigMap version: ${{ steps.version.outputs.NEW_VERSION }}
+          - Trigger: training-service code changes"
+          
+          git pull --rebase origin main
+          git push
